@@ -1,0 +1,85 @@
+{
+    "input": {
+        "path": "."
+    },
+    "output": {
+        "path": "."
+    },
+    "cache": {
+        "enabled": true,
+        "path": ".",
+        "extension": ".cache"
+    },
+    "source_map": {
+        "enabled": true,
+        "path": ".",
+        "extension": ".map"
+    },
+    "log": {
+        "enabled": true,
+        "path": ".",
+        "name": "continuum",
+        "extension": ".log",
+        "levels": {
+            "console": "DEBUG",
+            "file": "ALL"
+        }
+    },
+    "compilation": {
+        "enabled": true,
+        "compilers": {
+            "coffee-script": {
+                "input_extension": "coffee",
+                "output_extension": "js",
+                "options": {}
+            },
+            "livescript": {
+                "input_extension": "ls",
+                "output_extension": "js",
+                "options": {}
+            },
+            "sass": {
+                "input_extension": ["sass", "scss"],
+                "output_extension": "css",
+                "options": {}
+            },
+            "stylus": {
+                "input_extension": "stylus",
+                "output_extension": "css",
+                "options": {}
+            },
+            "less": {
+                "input_extension": "less",
+                "output_extension": "css",
+                "options": {}
+            },
+            "jade": {
+                "input_extension": "jade",
+                "output_extension": "html",
+                "options": {
+                    "pretty": true
+                }
+            }
+        }
+    },
+    
+    "transformation": {
+        "enabled": true,
+        "explicit": false,
+        "explicit_token": "use cps",
+        "lazy_marker": "!!",
+        "strict_marker": "!!!",
+        "lazy_safe_marker": "$cb_lazy",
+        "strict_safe_marker": "$cb_strict"
+    },
+    
+    "analysis": {
+        "enabled": true,
+        "js": {
+            "options": {}
+        }, 
+        "css": {
+            "options": {}
+        }
+    }
+}

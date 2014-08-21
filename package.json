@@ -1,0 +1,63 @@
+{
+    "name": "continuum.js",
+    "version": "1.0.0",
+    "description": "Continuum.js is a multi compiler for web projects with benefits for Javascript Continuos-Passing-Style transformations.",
+    "author": {
+        "name": "Stefano Graziato",
+        "url": "http://www.eurekaa.it",
+        "email": "stefano.graziato@eurekaa.it"
+    },
+    "license": "BSD",
+    "main": "continuum.js",
+    "bin": {
+        "continuum": "./bin/bin/continuum"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/eurekaa/continuum.js.git"
+    },
+    "preferGlobal": true,
+    "bugs": {
+        "url": "https://github.com/eurekaa/continuum.js/issues"
+    },
+    "keywords": [
+        "javascript",
+        "compiler",
+        "continuum",
+        "async",
+        "cps",
+        "coffeescript",
+        "streamline",
+        "jade",
+        "less"
+    ],
+    "dependencies": {
+        "jshint": "2.5.3",
+        "csslint": "0.10.0",
+        "html5-lint": "0.2.2",
+        "ast-types": "0.4.9",
+        "esprima": "1.2.2",
+        "escodegen": "1.3.3",
+        "coffee-script": "1.7.1",
+        "LiveScript": "1.2.0",
+        "jade": "1.4.2",
+        "node-sass": "0.9.3",
+        "less": "1.7.3",
+        "stylus": "0.47.3",
+        "commander": "2.3.0",
+        "fs-tools": "0.2.11",
+        "string": "1.5.0",
+        "async": "0.9.0",
+        "lodash": "2.4.1",
+        "underscore.string": "2.3.3",
+        "jstest": "1.0.5",
+        "chai": "1.9.1",
+        "log4js": "0.6.16"
+    },
+    "engines": {
+        "node": ">=0.10.13"
+    },
+    "readmeFilename": "README.md",
+    "_id": "continuum.js@0.1.7",
+    "_from": "continuum.js@"
+}
