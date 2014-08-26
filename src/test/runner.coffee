@@ -52,4 +52,4 @@ async.series [
             runner.addReporter js_test.Test.Reporters.Error()
             back()
 
-], (err)-> #if err then throw err
+], (err)-> if err then console.error err

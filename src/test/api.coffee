@@ -24,7 +24,7 @@ languages = ['coffeescript', 'livescript', 'javascript']
 js_test.Test.describe 'api.js', -> 
    
    @.describe '.compile()', ->
-      
+      ###
       @.it 'compiles coffescript files.', ->
          for example in _.keys examples when examples[example].extension is '.coffee'
             expect(fs.existsSync(options.output.path + '/' + example + '.js')).to.be.true
@@ -52,7 +52,7 @@ js_test.Test.describe 'api.js', ->
       @.it 'skips compilation for non compilable files.', ->
          for example in _.keys examples when examples[example].extension is '.txt'
             expect(fs.existsSync(options.output.path + '/' + example + '.txt')).to.be.true
-      
+      ###
    
    @.describe '.transform()', ->
       
@@ -65,14 +65,10 @@ js_test.Test.describe 'api.js', ->
                expect(result).to.be.true
                next()
          , done
-
       
       @.it 'do not performs cps transformation when "explicit" is enabled and "use cps" is missing.', (done)->
          async.each languages, (language, next)->
-            expect(fs.existsSync('./' + options.output.path + '/scripts/' + language + '/cps_implicit.js')).to.be.true
-            test = require './' + options.output.path + '/scripts/' + language + '/cps_implicit.js'
-            result = test.test (err, result)->
-            expect(result).to.be.true
+            expect(fs.existsSync('./' + options.output.path + '/scripts/' + language + '/cps_implicit.js')).to.be.false
             next()
          , done
       

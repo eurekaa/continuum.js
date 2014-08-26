@@ -41,23 +41,19 @@ js_test.Test.describe 'continuum.js', ->
       @.it 'copies file from input to output creating sub directories if needed.', ->
          expect(fs.existsSync(options.output.path + '/media/not_compilable.txt')).to.be.true
 
-      @.it 'writes file to output  creating sub directories if needed.', ->
-         expect(fs.existsSync(options.output.path + '/scripts/coffeescript/cps_none.js')).to.be.true
+      @.it 'writes file to output creating sub directories if needed.', ->
+         expect(fs.existsSync(options.output.path + '/media/not_compilable.txt')).to.be.true
 
       @.it 'if cache is enabled compiles only modified files.', (done)->
          #todo: esegui run() con un solo file e verifica che non sia compilato
          #todo: riscrivi il sorgente di un file, compilalo e controlla che sia compilato.
          done()
       
-      @.it 'writes cache file creating sub directories if needed.', (done)->
-         fs_tools.walk options.input.path, (file_path, stats, next)->
-            cache_path = file_path.replace(options.input.path, options.cache.path).replace(path.extname(file_path), options.cache.extension)
-            expect(fs.existsSync(cache_path)).to.be.true
-            next()
-         , done
+      @.it 'writes cache file creating sub directories if needed.', ->
+         expect(fs.existsSync(options.cache.path + '/media/not_compilable.cache')).to.be.true
       
       @.it 'writes logs.', (done)->
-         fs.exists options.log.path + '\\' + options.log.name + options.log.extension, (exists)->
+         fs.exists options.log.path + '\\' + options.log.name + '.' + options.log.extension, (exists)->
             expect(exists).to.be.true
             done()
 

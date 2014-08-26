@@ -2,29 +2,34 @@
     "input": {
         "path": "."
     },
+    
     "output": {
         "path": "."
     },
+    
     "cache": {
         "enabled": true,
         "path": ".",
-        "extension": ".cache"
+        "extension": "cache"
     },
+    
     "source_map": {
         "enabled": true,
         "path": ".",
-        "extension": ".map"
+        "extension": "map"
     },
+    
     "log": {
         "enabled": true,
         "path": ".",
         "name": "continuum",
-        "extension": ".log",
-        "levels": {
+        "extension": "log",
+        "levels": { // [ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF]
             "console": "DEBUG",
             "file": "ALL"
         }
     },
+    
     "compilation": {
         "enabled": true,
         "compilers": {
@@ -41,12 +46,20 @@
             "sass": {
                 "input_extension": ["sass", "scss"],
                 "output_extension": "css",
-                "options": {}
+                "options": { // https://www.npmjs.org/package/node-sass
+                    "includePaths": [], // paths to include to resolve @imports.
+                    "imagePath": "", // image path to prepend when you use image-url() function.
+                    "outputStyle": "nested", // nested || compressed
+                    "precision": null // decimals count.
+                }
             },
             "stylus": {
-                "input_extension": "stylus",
+                "input_extension": ["styl", "stylus"],
                 "output_extension": "css",
-                "options": {}
+                "options": {
+                    "compress": false,
+                    "linenos": true
+                }
             },
             "less": {
                 "input_extension": "less",
@@ -69,17 +82,29 @@
         "explicit_token": "use cps",
         "lazy_marker": "!!",
         "strict_marker": "!!!",
-        "lazy_safe_marker": "$cb_lazy",
-        "strict_safe_marker": "$cb_strict"
+        "lazy_safe_marker": "$back",
+        "strict_safe_marker": "$throw"
     },
     
     "analysis": {
         "enabled": true,
-        "js": {
-            "options": {}
+        "js": { 
+            "options": {} // http://jshint.com/docs/options/
         }, 
         "css": {
             "options": {}
+        },
+        "html": {
+            "options": {}
         }
-    }
+    },
+    
+    "compression": {
+        "enabled": true,
+        "js": {
+            "options": {}
+        }
+    },
+    
+    "packaging": {}
 }

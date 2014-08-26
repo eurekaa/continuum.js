@@ -32,6 +32,8 @@
         "less"
     ],
     "dependencies": {
+        "strip-comments": "0.2.0",
+        "uglifyjs": "2.3.6",
         "jshint": "2.5.3",
         "csslint": "0.10.0",
         "html5-lint": "0.2.2",

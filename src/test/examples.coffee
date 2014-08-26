@@ -14,8 +14,9 @@ async = require 'async'
 exports['options'] =
    input: path: 'examples/src'
    output: path: 'examples/bin'
+   source_map: enabled: true, path: 'examples/map'
    cache: enabled: true, path: 'examples/cache'
-   log: enabled: true, path: 'examples/log', name: 'test', extension: '.log', levels: console: 'ALL', file: 'ALL'
+   log: enabled: true, path: 'examples/log', name: 'test', levels: console: 'ALL', file: 'ALL'
    transformation: enabled: true, explicit: true
 
 
@@ -24,13 +25,12 @@ exports['scripts/coffeescript/cps_explicit'] =
    extension: '.coffee'
    content: """
             'use cps'
-            result = @.test !!!
-            console.log result.value
-            test = (test, !!)-> return typeof test is 'string'
+            test = (test, !!!)-> typeof test is 'string'
             exports['test'] = (!!)->
                result = test 'test', !!
                return result
-            
+            result = @.test !!!  
+            return result.value
             """
 
 exports['scripts/coffeescript/cps_implicit'] = 
@@ -89,7 +89,7 @@ exports['scripts/javascript/cps_explicit'] =
    content: """
             'use cps'
             var test = function(test, !!){
-               return (typeof test === 'string') ? true: false;
+               return (typeof test === 'string');
             };
             exports['test'] = function(!!){
                result = test('test', !!);
@@ -160,7 +160,7 @@ exports['styles/less/test'] =
 
 # *** STYLUS ***
 exports['styles/stylus/test'] = 
-   extension: '.stylus'
+   extension: '.styl'
    content: """
             border-radius()
                -webkit-border-radius: arguments
