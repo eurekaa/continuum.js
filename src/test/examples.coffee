@@ -16,7 +16,7 @@ exports['options'] =
    output: path: 'examples/bin'
    source_map: enabled: true, path: 'examples/map'
    cache: enabled: true, path: 'examples/cache'
-   log: enabled: true, path: 'examples/log', name: 'test', levels: console: 'ALL', file: 'ALL'
+   log: enabled: true, path: 'examples/log', name: 'test', levels: console: 'ALL', file: 'OFF'
    transformation: enabled: true, explicit: true
 
 

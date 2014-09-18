@@ -32,6 +32,8 @@
         "less"
     ],
     "dependencies": {
+        "source-map": "0.1.38",
+        "acorn": "0.7.0",
         "strip-comments": "0.2.0",
         "uglifyjs": "2.3.6",
         "jshint": "2.5.3",

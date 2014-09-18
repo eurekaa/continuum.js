@@ -101,47 +101,54 @@ exports['setup'] = (options)->
    config.input.path = './' if config.input.path is '.'
    config.input.path = path.normalize config.input.path
    config.input.info = fs.lstatSync config.input.path
+   
    # output.
    config.output.path = './' if config.output.path is '.'
    config.output.path = if config.output.path then path.normalize config.output.path else config.input.path
    if not fs.existsSync config.output.path then fs_tools.mkdirSync config.output.path
    config.output.info = fs.lstatSync config.output.path
    if config.output.info.isFile() then throw new Error 'output must be a directory.'
-   # cache.
-   config.cache.path = './' if config.cache.path is '.'
-   config.cache.path = if config.cache.path then path.normalize config.cache.path else config.input.path
-   if not fs.existsSync config.cache.path then fs_tools.mkdirSync config.cache.path
-   config.cache.info = fs.lstatSync config.cache.path
-   if config.cache.info.isFile() then throw new Error 'cache must be a directory'
-   # source maps.
-   config.source_map.path = './' if config.source_map.path is '.'
-   config.source_map.path = if config.source_map.path then path.normalize config.source_map.path else config.input.path
-   if not fs.existsSync config.source_map.path then fs_tools.mkdirSync config.source_map.path
-   config.source_map.info = fs.lstatSync config.source_map.path
-   if config.source_map.info.isFile() then throw new Error 'source_map must be a directory.'
-   # logs.
-   if config.log.enabled is false
-      config.log.levels.console = 'OFF'
-      config.log.levels.file = 'OFF'
-   config.log.path = './' if config.log.path is '.'
-   config.log.path = if config.log.path then path.normalize config.log.path else config.input.path
-   if not fs.existsSync config.log.path then fs_tools.mkdirSync config.log.path
    
-   # configure logger.
-   appenders = []
-   appenders.push
-      type: 'logLevelFilter'
-      level: config.log.levels.console
-      appender: 
-         type: 'console'
-         layout: type: 'pattern', pattern: '%[[%p]%] %m'
-   appenders.push
-      type: 'logLevelFilter'
-      level: config.log.levels.file
-      appender:
-         type: 'file', filename: config.log.path + '\\' + config.log.name + '.' + config.log.extension
-         layout: type: 'pattern', pattern: '[%d{yyyy-MM-dd hh:mm}] [%p] - %m'
-   log4js.configure appenders: appenders
+   # cache.
+   if config.cache.enabled is true
+      config.cache.path = './' if config.cache.path is '.'
+      config.cache.path = if config.cache.path then path.normalize config.cache.path else config.input.path
+      if not fs.existsSync config.cache.path then fs_tools.mkdirSync config.cache.path
+      config.cache.info = fs.lstatSync config.cache.path
+      if config.cache.info.isFile() then throw new Error 'cache must be a directory'
+   
+   # source maps.
+   if config.source_map.enabled is true
+      config.source_map.path = './' if config.source_map.path is '.'
+      config.source_map.path = if config.source_map.path then path.normalize config.source_map.path else config.input.path
+      if not fs.existsSync config.source_map.path then fs_tools.mkdirSync config.source_map.path
+      config.source_map.info = fs.lstatSync config.source_map.path
+      if config.source_map.info.isFile() then throw new Error 'source_map must be a directory.'
+   
+   # logs.
+   if config.log.enabled is true
+      appenders = []
+      
+      if config.log.levels.file.toLocaleUpperCase() isnt 'OFF'
+         config.log.path = './' if config.log.path is '.'
+         config.log.path = if config.log.path then path.normalize config.log.path else config.input.path
+         if not fs.existsSync config.log.path then fs_tools.mkdirSync config.log.path
+         appenders.push
+            type: 'logLevelFilter'
+            level: config.log.levels.file
+            appender:
+               type: 'file', filename: config.log.path + '\\' + config.log.name + '.' + config.log.extension
+               layout: type: 'pattern', pattern: '[%d{yyyy-MM-dd hh:mm}] [%p] - %m'
+      
+      appenders.push
+         type: 'logLevelFilter'
+         level: config.log.levels.console
+         appender:
+            type: 'console'
+            layout: type: 'pattern', pattern: '%[[%p]%] %m'
+      log4js.configure appenders: appenders
+   
+   else log4js.setGlobalLogLevel 'OFF'
    
    return config
 
@@ -161,8 +168,8 @@ exports['run'] = (options, back)->
       batch.skipped = 0
       batch.failures = 0
       batch.successes = 0
-      batch.started = Date.now() 
-
+      batch.started = Date.now()
+      
       # walk through input and compile.
       logger.info '*** processing project: starting... ***'
       logger.debug '[input: ' + config.input.path + ', output: ' + config.output.path + ']\n'
@@ -188,23 +195,21 @@ exports['run'] = (options, back)->
          output.is_css = -> input.is_css() or input.find_compiler()?.output_extension is 'css'
          output.is_html = -> input.is_html() or input.find_compiler()?.output_extension is 'html' 
          output.code = ''
-         
+
          source_map = {}
          source_map.is_enabled = -> config.source_map.enabled is true
          source_map.extension = config.source_map.extension
          source_map.file = input.file.replace(config.input.path, config.source_map.path).replace '.' + input.extension, '.' + source_map.extension
          source_map.directory = config.source_map.path + '\\' + path.dirname path.relative(config.source_map.path, source_map.file)
-         source_map.root = path.relative config.source_map.path, batch.directory
-         source_map.input = path.relative source_map.root, input.file
-         source_map.output = path.resolve output.file
-         source_map.link = ''
-         source_map.code = ''
+         source_map.link = '/*# sourceMappingURL=' + path.relative(output.directory, source_map.directory) + '\\' + path.basename(source_map.file) + ' */'
+         source_map.code = if source_map.is_enabled() then file: path.resolve(output.file), sources: [path.relative(source_map.directory, input.file)] else undefined
          
          cache = {}
          cache.is_enabled = -> config.cache.enabled is true
          cache.extension = config.cache.extension
          cache.file = input.file.replace(config.input.path, config.cache.path).replace '.' + input.extension, '.' + cache.extension
          cache.directory = config.cache.path + '\\' + path.dirname path.relative(config.cache.path, cache.file)
+         cache.exists = -> fs.existsSync(cache.file) and (input_info.mtime <= fs.lstatSync(cache.file).mtime)
          cache.code = ''
          
          # skip output, cache, source_map and log directories.
@@ -218,9 +223,7 @@ exports['run'] = (options, back)->
          batch.processed++
          
          # if enabled, read from cache and skip if source file is not changed.
-         if config.cache.enabled is true and fs.existsSync(cache.file) and (input_info.mtime <= fs.lstatSync(cache.file).mtime)
-            batch.skipped++
-            return next()
+         if cache.is_enabled() and cache.exists() then batch.skipped++; return next()
          
          # start processing input file.
          log = log4js.getBufferedLogger ' '
@@ -249,15 +252,15 @@ exports['run'] = (options, back)->
                if input.is_js() or input.is_css() or input.is_html()
                   output.code = strip_comments output.code
                
-               # wrap in a closure.
-               if input.is_js() and not _.startsWith output.code, '(function () {' 
-                  output.code = '(function () {\n' + output.code + '\n}.call(this));'
+               # wrap javascript in a closure.
+               #if input.is_js() and not _.startsWith output.code, '(function () {' 
+               #   output.code = '(function () {\n' + output.code + '\n}.call(this));'
                
                # replace cps callback marker with a compilation safer one
                # or stop processing if marker is detected and transformation is disabled. 
                if output.is_js() and config.transformation.enabled is true and 
                (config.transformation.explicit is true and not string(output.code).contains config.transformation.explicit_token) and
-               string(output.code).contains '!!'
+               (string(output.code).contains config.transformation.lazy_marker or string(output.code).contains config.transformation.strict_marker)
                   failed = true
                   log.error 'callback markers detected but transformation is disabled or not explicit.'
                else
@@ -279,27 +282,19 @@ exports['run'] = (options, back)->
                if not input.find_compiler()? or input.is_js() or input.is_css() or input.is_html() then return back()
 
                option = {}
-               option.input = {}
-               option.input.file = input.file
-               option.input.code = output.code
-               if source_map.is_enabled()
-                  option.source_map = {}
-                  option.source_map.root = source_map.root
-                  option.source_map.input = source_map.input
-                  option.source_map.output = source_map.output
-               option.config = input.find_compiler().options or {} 
-               api.compile option, (err, compiled)->
+               option.source_map = source_map.code if source_map.is_enabled()
+               option.config = input.find_compiler()?.options or {} 
+               api.compile file: input.file, code: output.code, option, (err, result)->
                   if err
                      failed = true
-                     # (coffee-script needs the stack to show the error line).
-                     if input.extension is 'coffee' then log.error err.stack else log.error err.message
+                     log.error err.message
                      log.trace err.stack
                      log.error 'compilation: FAILED!'
                   else 
-                     output.code = compiled.code
-                     source_map.code = compiled.source_map
-                     source_map.raw = compiled.source_map_raw
-                     log.debug 'compilation: done!'
+                     output.code = result.code
+                     source_map.code = result.source_map
+                     log.warn warn for warn in result.warnings
+                     log.debug 'compilation: done! [warnings: ' + result.warnings.length + ']'
                   return back()
             
             
@@ -314,18 +309,20 @@ exports['run'] = (options, back)->
                # skip if explicit is required and no 'use cps' is declared in file.
                if config.transformation.explicit is true and not string(output.code).contains config.transformation.explicit_token then return back()
                
-               api.transform input.file, output.code, output.source_map, 
-               lazy_marker: config.transformation.lazy_safe_marker
-               strict_marker: config.transformation.strict_safe_marker,
-               (err, transformed)->
+               option = {}
+               option.source_map = source_map.code if source_map.is_enabled()
+               option.config = {}
+               option.config.lazy_marker = config.transformation.lazy_safe_marker
+               option.config.strict_marker = config.transformation.strict_safe_marker
+               api.transform_cps file: output.file, code: output.code, option, (err, result)->
                   if err 
                      failed = true
                      log.error err.message
                      log.trace err.stack
                      log.error 'cps transformation: FAILED!'
                   else
-                     output.code = transformed.code
-                     output.source_map = transformed.source_map
+                     output.code = result.code
+                     source_map.code = result.source_map
                      log.debug 'cps transformation: done!'
                   return back()
             
@@ -338,14 +335,17 @@ exports['run'] = (options, back)->
                if config.analysis.enabled isnt true then return back()
                # skip non analizable files.
                if not (output.is_js() or output.is_css() or output.is_html()) then return back()
-               api.analize output.file, output.code, config.analysis[output.extension]?.options, (err, result)->
+               option = {}
+               option.source_map = source_map.code if source_map.is_enabled()
+               option.config = config.analysis[output.extension]?.options
+               api.analize file: output.file, code: output.code, option, (err, result)->
                   if err
                      log.error err.message 
                      log.trace err.stack
                      log.error 'code analysis: FAILED!'
                   else
-                     for warn in result then log.warn warn.message + ' - [' + warn.line + ', ' + warn.column + ']: ' + warn.evidence
-                     log.debug 'code analysis: done! [warnings: ' + result.length + ']'
+                     for warn in result.warnings then log.warn warn.message + ' - [' + warn.line + ', ' + warn.column + ']: ' + warn.evidence
+                     log.debug 'code analysis: done! [warnings: ' + result.warnings.length + ']'
                   return back()
             
             
@@ -355,9 +355,7 @@ exports['run'] = (options, back)->
                if failed is true then return back()
                
                # add source map reference to output if required.
-               if config.source_map.enabled is true and source_map.code? and source_map.code isnt ''
-                  output.code += '\n/*@sourceMappingURL=' + source_map.input + '*/'
-               
+               #if source_map.is_enabled() then output.code += '\n' + source_map.link
                async.series [
                   (back)-> fs_tools.mkdir output.directory, back
                   (back)-> fs.writeFile output.file, output.code, back
@@ -375,19 +373,22 @@ exports['run'] = (options, back)->
                # skip if process is interrupted.
                if failed is true then return back()
                # skip if source map is not enabled.
-               if config.source_map.enabled isnt true then return back()
+               if not source_map.is_enabled() then return back()
                # skip if source map is not present.
-               if not source_map.code? or source_map.code is '' then return back()
+               if not _.has source_map.code, 'mappings' then return back()
                
+               # stringify and write source maps. 
+               source_map.code = JSON.stringify source_map.code, null, 4
                async.series [
                   (back)-> fs_tools.mkdir source_map.directory, back
                   (back)-> fs.writeFile source_map.file, source_map.code, back
                ], (err)->
                   if err
-                     failed = failed # do not stop batching.
+                     failed = failed # do not stop processing.
                      log.error err.message
                      log.trace err.stack
-                     log.warn 'writing source map: FAILED!'
+                     log.warn 'source mapping: FAILED!'
+                  else log.debug 'source mapping: done!'
                   return back()
             
             
@@ -396,17 +397,17 @@ exports['run'] = (options, back)->
                # skip if process is interrupted.
                if failed is true then return back()
                # skip if not enabled.
-               if config.cache.enabled isnt true then return back()
+               if not cache.is_enabled() then return back()
                
                async.series [
                   (back)-> fs_tools.mkdir cache.directory, back
-                  (back)-> fs.writeFile cache.file, '', back
+                  (back)-> fs.writeFile cache.file, cache.code, back
                ], (err)->
                   if err
                      failed = failed # do not stop processing.
                      log.error err.message
                      log.trace err.stack
-                     log.warn 'writing cache: FAILED!' 
+                     log.warn 'caching: FAILED!' 
                   return back()
             
             

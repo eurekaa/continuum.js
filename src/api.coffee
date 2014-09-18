@@ -6,6 +6,8 @@
 # File Name: api
 # Created: 22/07/14 18.46
 
+
+# require utilities.
 fs = require 'fs'
 path = require 'path' 
 string = require 'string'
@@ -13,39 +15,9 @@ _ = require 'lodash'
 _.mixin require('underscore.string').exports()
 string = require 'string'
 async = require 'async'
-json = require 'json-comments'
-
-
-# linters.
-jshint = require('jshint').JSHINT
-csslint = require('csslint').CSSLint
-htmlint = require 'html5-lint'
-
 strip_comments = require 'strip-comments'
-uglify = require 'uglifyjs'
 
-# generators.
-ast =
-   parse: require('esprima').parse
-   format: require('escodegen').generate
-   walk: require('ast-types').visit
-   types: require('ast-types').namedTypes
-   create: require('ast-types').builders
-
-
-###
-   @options {object}
-   @options.input {object}
-   @options.input.file {string}
-   @options.input.code [string] 
-   @options.source_map [object]
-   @options.source_map.root [string]: source map root path.
-   @options.source_map.input [string]: source map input path.
-   @options.source_map.output {string}: source map output path.
-   @options.config [object]: additional compiler configurations. 
-   @back {function}
-###
-
+# require compilers (transpillers).
 coffeescript = require 'coffee-script'
 livescript = require 'LiveScript'
 sass = require 'node-sass'
@@ -53,48 +25,107 @@ stylus = require 'stylus'
 less = require 'less'
 jade = require 'jade'
 
-exports['compile'] = (options, back)->
-   try
-      if not options or _.isFunction options then return back new Error('options are required.')
-      if not back or not _.isFunction back then return back new Error('callback is required.')
+# require linters.
+jshint = require('jshint').JSHINT
+csslint = require('csslint').CSSLint
+htmlint = require 'html5-lint'
 
-      input = {}
-      if not options.input then return back new Error('options.input is required.')
-      if not options.input.file then return back new Error('options.input.file is required.')
-      input.file = options.input.file
-      input.extension = path.extname(input.file).replace '.', ''
-      input.code = options.input.code or fs.readFileSync input.file, 'utf-8'
+# require compressors.
+uglify = require 'uglifyjs'
+
+# require javascript transformators.
+ast = {} 
+ast.parse = require('acorn').parse
+ast.format = require('escodegen').generate
+ast.create = require('ast-types').builders
+ast.types = require('ast-types').namedTypes
+ast.walk = require('ast-types').visit
+
+# require source map handlers.
+source_map = {} 
+source_map.parse = require('source-map').SourceMapConsumer
+source_map.generate = require('source-map').SourceMapGenerator
+source_map.update = (original, generated)->
+   generated = new source_map.parse generated
+   original = new source_map.parse original
+   remapped = new source_map.generate()
+   original.eachMapping (map)->
+      # { source, generatedLine, generatedColumn, originalLine, originalColumn, name }
+      last = generated.generatedPositionFor source: map.source, line: map.generatedLine, column: map.generatedColumn
+      remapped.addMapping
+         original: line: map.originalLine, column: map.originalColumn
+         generated: line: last.line, column: last.column
+         source: map.source
+         name: map.name
+   remapped = JSON.parse remapped.toString()
+   remapped.file = original.file
+   return remapped
+
+source_map.get_original_position = (map, position)->
+   map = new source_map.parse map
+   return map.originalPositionFor position
+
+
+
+###
+   @name: compile
+   @description: compiles sources using the appropriate compiler.
+   @todo: add source map support for every compiler.
+   
+   @params:
+   @input {object}
+   @input.file {string}: input file path (will be used to select the appropriate compiler).
+   @input.code [string]: raw code (compiles the code without reading it from file sytem).
+   @options.source_map [object]: if defined compilation will try to generate a Mozilla V3 source map (not available for all compilers).
+   @options.source_map.file [string]: output file path (absolute or relative to source map file).
+   @options.source_map.sourceRoot [string]: root path prepended to source paths.
+   @options.source_map.sources {array}: an array of source paths involved in mapping. 
+   @options.config [object]: additional compiler configurations. 
+   @back {function}
+   
+   @return output {object}:
+   @output.code {string}: compiled string code.
+   @output.source_map {object}: source map if required, null otherwise.
+   @output.warnings {array}: compilation warnings.
+###
+
+exports['compile'] = (input, options, back)->
+   try
+      if not _.isFunction back then return throw new Error('callback is required {function}.')
+      if not _.isObject input then return back new Error('input is required {object}.')
+      if not _.isObject options then return back new Error('options is required {object}.')
+      if not input.file then return back new Error('input.file is required {string}.')
+      if _.isObject options.source_map and not _.isArray options.source_map.sources then return back new Error 'options.source_map.sources is required {array}.'
       
-      source_map = {}
-      source_map.is_enabled = -> options.source_map isnt undefined
-      if source_map.is_enabled() and not _.isString options.source_map.output then return back new Error 'options.source_map.output is required.'
-      source_map.root = options.source_map?.root
-      source_map.input = options.source_map?.input or input.file
-      source_map.output = options.source_map?.output
+      input.extension = path.extname(input.file).replace '.', ''
+      input.code = input.code or fs.readFileSync input.file, 'utf-8'    
       
       output = {}
-      output.code = undefined
-      output.source_map = undefined
+      output.code = null
+      output.source_map = null
+      output.warnings = []
       
       
       # *** COFFEESCRIPT ***
       if input.extension is 'coffee'
-         config =
-            filename: input.file
-            sourceMap: source_map.is_enabled()
-            sourceRoot: source_map.root
-            sourceFiles: source_map.input
-            generatedFile: source_map.output
+         config = {}
+         config.filename = input.file
+         if _.isObject options.source_map
+            config.sourceMap = true
+            config.sourceRoot = options.source_map.root or ''
+            config.sourceFiles = options.source_map.sources
+            config.generatedFile = options.source_map.file or ''
          config = _.merge config, (options.config or {})
          compiled = coffeescript.compile input.code, config
          output.code = compiled.js or compiled
-         output.source_map = compiled.v3SourceMap or undefined
+         output.source_map = if compiled.v3SourceMap then JSON.parse(compiled.v3SourceMap) else null
          return back null, output
       
       
       # *** LIVESCRIPT *** http://livescript.net/#usage
       #todo: add source map support (use --ast).
       else if input.extension is 'ls'
+         if _.isObject options.source_map then output.warnings.push 'livescript doesn\'t support source maps.'
          output.code = livescript.compile input.code #, options.config
          return back null, output
       
@@ -103,30 +134,34 @@ exports['compile'] = (options, back)->
       else if input.extension is 'sass' or input.extension is 'scss'
          config = {}
          config.file = input.file
-         config.sourceComments = if source_map.is_enabled() then 'map' else 'none'
-         config.sourceMap = '.' # bugfix: use fake path and replace later.
-         config.outFile = '.'
+         config.data = input.code
+         if _.isObject options.source_map
+            config.sourceComments = 'map'
+            config.sourceMap = '.' # bugfix: use fake path and replace later.
+            config.outFile = '.'
          config = _.merge config, (options.config or {})
          sass.render _.merge config,
             
             success: (compiled, map)->
                # (problems with wrong paths in source_map. can't parse cause '\' instead of '\\'. 
                # extract mapping and recreate object).
-               mappings = _.strRight(map, '"mappings":')
-               mappings = _.trim(mappings).replace(/\}/g, '').replace(/\n/g, '').replace(/"/g, '')
-               output.source_map =
-                  version: 3
-                  file: source_map.output
-                  sourceRoot: source_map.root or ''
-                  sources: [source_map.input]
-                  names: []
-                  mappings: mappings
-               output.source_map = JSON.stringify output.source_map, null, 4
-               output.code = strip_comments compiled
-               return back null, output
+               try
+                  if _.isObject options.source_map
+                     mappings = _.strRight(map, '"mappings":')
+                     mappings = _.trim(mappings).replace(/\}/g, '').replace(/\n/g, '').replace(/"/g, '')
+                     output.source_map =
+                        version: 3
+                        file: options.source_map.file
+                        sourceRoot: options.source_map.root or ''
+                        sources: options.source_map.sources
+                        names: []
+                        mappings: mappings
+                  output.code = strip_comments compiled
+                  return back null, output
+               catch err then return back err
             
             error: (err)->
-               return back new Error(err.replace(options.input_file + ':', '').replace('\n', ''))
+               return back new Error(err.replace(options.file + ':', '').replace('\n', ''))
       
       
       # *** LESS ***
@@ -141,7 +176,7 @@ exports['compile'] = (options, back)->
       else if input.extension is 'styl' or input.extension is 'stylus'
          stylus.render input.code,
             filename: input.file
-            sourcemaps: source_map.is_enabled()
+            sourcemaps: _.isObject options.source_map
             compress: false
             linenos: true
          , (err, compiled)->
@@ -165,69 +200,121 @@ exports['compile'] = (options, back)->
    catch err then return back err
 
 
+exports['analize'] = (input, options, back)->
+   if not _.isFunction back then return throw new Error('callback is required {function}.')
+   if not _.isObject input then return back new Error('input is required {object}.')
+   if not _.isObject options then return back new Error('options is required {object}.')
+   if not _.isString input.file then return back new Error('input.file is required {string}.')
 
-exports['analize'] = (input_file, input_code, options, back)->
    try
-      if _.isFunction options then back = options; options = {}
-      input_extension = path.extname(input_file).replace('.', '')
-      options = options or {} 
-      warnings = []
-      switch input_extension
-         
-         when 'js'
-            result = jshint input_code, options 
-            if result is false
-               for warn in jshint.errors when warn isnt null 
-                  warnings.push
-                     message: _.trim warn.reason
-                     evidence: _.trim warn.evidence
-                     line: warn.line
+      input.extension = path.extname(input.file).replace('.', '')
+      input.code = fs.readFileSync input.file, 'utf-8' if not input.code
+      
+      output = {}
+      output.warnings = []
+      
+      if input.extension is 'js'
+         result = jshint input.code, options.config 
+         if result is false
+            for warn in jshint.errors when warn isnt null
+               # translate position if a source_map is provided.
+               position = line: warn.line, column: warn.character
+               if _.isObject options.source_map 
+                  position = source_map.get_original_position options.source_map, 
+                     source: options.source_map.sources[0], 
+                     line: warn.line, 
                      column: warn.character
-            return back null, warnings
+               output.warnings.push
+                  message: _.trim warn.reason
+                  evidence: _.trim warn.evidence
+                  line: position.line 
+                  column: position.column
+         return back null, output
          
-         when 'css'
-            result = csslint.verify input_code, options
-            for warn in result.messages then warnings.push 
-               message: _.trim _.strLeft(warn.message, 'at line')
-               evidence: _.trim warn.evidence 
-               line: warn.line
-               column: warn.col
-            return back null, warnings
+      else if input.extension is 'css'
+         result = csslint.verify input.code, options.config
+         for warn in result.messages then output.warnings.push 
+            message: _.trim _.strLeft(warn.message, 'at line')
+            evidence: _.trim warn.evidence 
+            line: warn.line
+            column: warn.col
+         return back null, output
          
-         when 'html', 'htm' 
-            htmlint input_code, options, (err, result)->
-               if err then return back err
-               for warn in result.messages then warnings.push
-                  message: _.trim warn.message
-                  evidence: _.trim warn.extract + '..'
-                  line: warn.lastLine
-                  column: warn.lastColumn
-               return back null, warnings
+      else if input.extension is 'html' or input.extension is 'htm' 
+         htmlint input.code, options.config, (err, result)->
+            if err then return back err
+            for warn in result.messages then output.warnings.push
+               message: _.trim warn.message
+               evidence: _.trim warn.extract + '..'
+               line: warn.lastLine
+               column: warn.lastColumn
+            return back null, output
          
-         else back null, []
+      else return back null, output
    
    catch err then return back err, []
 
 
-exports['transform'] = (input_file, code, source_map, options, back)->
-   if _.isFunction source_map then back = source_map; source_map = null; options = {}
-   if _.isFunction options then back = options; options = {}
+###
+   @name: transform
+   @description: performs continuous passing style transformation on javascript files.
+   @params:
+   @options {object}
+
+      @options.file {string}: path to javascript file. 
+      @options.code [string]: raw javascript code. wins on options.file.
+      @options.ast [object]: valid ast object rappresenting javascript code (with locations if you want source mapping). wins on options.code and options.file.
+      @options.source_map [object|string]: if defined will try to generate a Mozilla V3 source map or to update an existing one.
+      @options.source_map.file {string}: output file path (absolute or relative to source map file).   
+      @options.source_map.sources {array}: an array of source paths involved in mapping.
+      @options.source_map.sourceRoot [string]: root path prepended to source paths.
+      @options.source_map.mappings [string]: if not empty will renew the source map, creates a new one otherwise.
+      
+      @options.config [object]: additional transformer configurations.
+      @options.config.lazy_marker [string]: the marker to be replaced with lazy callback (without returning errors).
+      @options.config.strict_marker [string]: the marker to be replaced with strict callback (returning errors).
    
+   @back {function}
+   
+   @returns {object}
+      file {string}: input file path.
+      code {string}: transformed code
+      ast {object}: transformed ast.
+      source_map {object}: source maps (new or renewed).
+      warnings {array}: transformation warnings.
+###
+
+exports['transform_cps'] = (input, options, back)->
+
    try
+      if _.isUndefined back or not _.isFunction back then return throw new Error('callback is required {function}.')
+      if not _.isObject options then return back new Error('options is required {object}.')
+      if not _.isObject input then return back new Error('input is required {object}.')
+      if not _.isString input.file then return back new Error('input.file is required {string}.')
       
-      # parse and analize code.
-      value = {}
-      value.null = ast.create.identifier 'null'
-      value.err = ast.create.identifier 'err'
+      options.source_map = JSON.parse options.source_map if _.isString options.source_map
+      options.source_map_enabled = _.isObject options.source_map 
+      options.source_map_exists = (options.source_map_enabled is true and _.has(options.source_map, 'mappings') and not _.isEmpty(options.source_map.mappings))
+      if options.source_map_enabled is true and not _.isString options.source_map.file then return back new Error 'options.source_map.file is required [string].'
+      if options.source_map_enabled is true and not _.isArray options.source_map.sources then return back new Error 'options.source_map.sources is required [array].'
+      
+      # parse code.
+      input.code = fs.readFileSync input.file, 'utf-8' if not _.isString input.code or not _.isObject input.ast
+      input.ast = ast.parse input.code, locations: _.isObject options.source_map if not _.isObject input.ast
+      
+      
+      # start with continuous passing style transformation.
+      # types reference: https://github.com/benjamn/ast-types/blob/master/def/core.js
       callback = {}
-      callback.lazy = ast.create.identifier(options.lazy_marker or '__')
-      callback.strict = ast.create.identifier(options.strict_marker or '___')
-      sintax = ast.parse code
+      callback.lazy = ast.create.identifier(options.config.lazy_marker or '$back')
+      callback.strict = ast.create.identifier(options.config.strict_marker or '$throw')
+      callback.null = ast.create.identifier 'null'
+      callback.error = ast.create.identifier 'error'
       
+      # todo: add closure if not present.
       
-      # reference: https://github.com/benjamn/ast-types/blob/master/def/core.js
       # transform function declarations containing callback marker.
-      ast.walk sintax.body, visitFunction: (path)->
+      ast.walk input.ast, visitFunction: (path)->
          declaration = {}
          declaration.statements = path.node.body
          declaration.parameters = path.node.params
@@ -241,9 +328,9 @@ exports['transform'] = (input_file, code, source_map, options, back)->
             # rewrite return statement. 
             ast.walk path.node, visitReturnStatement: (path)->
                path.get('argument').replace if callback.is_strict()
-                  ast.create.callExpression(callback.lazy, [value.null, path.node.argument])
+                  ast.create.callExpression(callback.lazy, [callback.null, path.node.argument])
                else ast.create.conditionalExpression(callback.lazy,
-                  ast.create.callExpression(callback.lazy, [value.null, path.node.argument]),
+                  ast.create.callExpression(callback.lazy, [callback.null, path.node.argument]),
                   path.node.argument
                )
                @.traverse path
@@ -261,19 +348,20 @@ exports['transform'] = (input_file, code, source_map, options, back)->
             # inject try catch block.
             path.get('body').replace ast.create.blockStatement [ ast.create.tryStatement(
                declaration.statements, 
-               ast.create.catchClause( value.err, null, ast.create.blockStatement [
-                  ast.create.returnStatement(ast.create.conditionalExpression(callback.lazy,
-                     ast.create.callExpression(callback.lazy, [value.err]),
-                     ast.create.callExpression(callback.strict, [value.err])
-                  ))
+               ast.create.catchClause( callback.error, null, ast.create.blockStatement [
+                  ast.create.returnStatement(
+                     ast.create.conditionalExpression(callback.lazy,
+                        ast.create.callExpression(callback.lazy, [callback.error]),
+                        ast.create.callExpression(callback.strict, [callback.error])
+                     )
+                  )
                ])
             )]
          
          @.traverse path
       
-      
       # transform function calls containing callback marker.
-      ast.walk sintax.body, visitExpression: (path)->
+      ast.walk input.ast, visitExpression: (path)->
          expression = {}
          expression.is_assigned = -> ast.types.AssignmentExpression.check path.node
          expression.call = if expression.is_assigned() then path.node.right else path.node
@@ -292,7 +380,7 @@ exports['transform'] = (input_file, code, source_map, options, back)->
             callback.name = if callback.is_lazy() then callback.lazy.name else callback.strict.name
             callback.position = _.findIndex expression.arguments, (arg)-> arg.name is callback.name
             callback.marker = expression.path.get('arguments', callback.position)
-            callback.arguments = if expression.is_assigned() then [value.err, expression.recipient] else [value.err]
+            callback.arguments = if expression.is_assigned() then [callback.error, expression.recipient] else [callback.error]
             callback.statements = _.rest expression.parent, expression.position + 1
             
             # remove sibling statements.
@@ -301,10 +389,10 @@ exports['transform'] = (input_file, code, source_map, options, back)->
             # if lazy callback automatically bubble error. 
             if callback.is_lazy() then callback.statements.unshift(
                ast.create.ifStatement(
-                  value.err,
+                  callback.error,
                   ast.create.returnStatement(ast.create.conditionalExpression(callback.lazy,
-                     ast.create.callExpression(callback.lazy, [value.err]),
-                     ast.create.callExpression(callback.strict, [value.err])
+                     ast.create.callExpression(callback.lazy, [callback.error]),
+                     ast.create.callExpression(callback.strict, [callback.error])
                   ))
                )
             )
@@ -315,7 +403,7 @@ exports['transform'] = (input_file, code, source_map, options, back)->
                   ast.create.assignmentExpression( '=',
                      expression.recipient,
                      ast.create.objectExpression([
-                        ast.create.property 'init', ast.create.identifier('error'), value.err
+                        ast.create.property 'init', ast.create.identifier('error'), callback.error
                         ast.create.property 'init', ast.create.identifier('value'), expression.recipient
                      ]) 
                   )
@@ -334,11 +422,10 @@ exports['transform'] = (input_file, code, source_map, options, back)->
          
          @.traverse path
       
-      
       # inject callback helper function.
-      ast.walk sintax, visitBlockStatement: (path)->
+      ast.walk input.ast, visitBlockStatement: (path)->
          path.get('body').unshift ast.create.variableDeclaration( 'var', [ast.create.variableDeclarator( callback.strict,
-            ast.create.functionExpression(null, [value.err], ast.create.blockStatement([
+            ast.create.functionExpression(null, [callback.error], ast.create.blockStatement([
                # declare global 'target': window if browser, global if nodejs.
                ast.create.variableDeclaration('var', [ast.create.variableDeclarator(ast.create.identifier('target'),
                   ast.create.conditionalExpression(ast.create.binaryExpression('!==', ast.create.unaryExpression('typeof', ast.create.identifier('window')), ast.create.literal 'undefined'),
@@ -349,8 +436,8 @@ exports['transform'] = (input_file, code, source_map, options, back)->
                ast.create.ifStatement(
                   ast.create.identifier('target.on_error'),
                   ast.create.returnStatement(ast.create.callExpression(ast.create.identifier('target.on_error'),
-                     [value.err]))
-                  ast.create.throwStatement(value.err)
+                     [callback.error]))
+                  ast.create.throwStatement(callback.error)
                )
             ]))
          )])
@@ -360,10 +447,26 @@ exports['transform'] = (input_file, code, source_map, options, back)->
          return false
       
       # generate code.
-      code = ast.format sintax
+      transformed = ast.format input.ast,
+         sourceMapWithCode: options.source_map_enabled
+         sourceMap: options.source_map.sources[0] if options.source_map_enabled is true
+
+      output = {}
+      output.code = transformed.code or transformed
       
-      return back null, code: code, source_map: source_map
+      # add escodegen missing properties.
+      if options.source_map_enabled is true
+         output.source_map = JSON.parse transformed.map
+         output.source_map.file = options.source_map.file
+         output.source_map.sourceRoot = options.source_map.sourceRoot or ''
+         # renew source map if an existing is provided.
+         if options.source_map_exists is true 
+            output.source_map = source_map.update options.source_map, output.source_map
+         
+      
+      return back null, output
    catch err then return back err
+
 
 
 exports['compress'] = (input_file, input_code, options, back)->
