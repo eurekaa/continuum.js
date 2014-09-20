@@ -21,25 +21,15 @@ exports['options'] =
 
 
 # *** COFFEESCRIPT ***
-exports['scripts/coffeescript/cps_explicit'] = 
+exports['scripts/coffeescript/cps'] = 
    extension: '.coffee'
    content: """
-            'use cps'
             test = (test, !!!)-> typeof test is 'string'
             exports['test'] = (!!)->
                result = test 'test', !!
                return result
             result = @.test !!!  
             return result.value
-            """
-
-exports['scripts/coffeescript/cps_implicit'] = 
-   extension: '.coffee'
-   content: """
-            test = (test, !!)-> return typeof test is 'string'
-            exports['test'] = (!!)->
-               result = test 'test', !!
-               return result
             """
 
 exports['scripts/coffeescript/cps_none'] =
@@ -54,17 +44,7 @@ exports['scripts/coffeescript/cps_none'] =
 
 
 # *** LIVESCRIPT ***
-exports['scripts/livescript/cps_explicit'] = 
-   extension: '.ls'
-   content: """
-            'use cps'
-            test = (test, !!)-> return typeof test is 'string'
-            exports['test'] = (!!)->
-               result = test 'test', !!
-               return result
-            """
-
-exports['scripts/livescript/cps_implicit'] =
+exports['scripts/livescript/cps'] =
    extension: '.ls'
    content: """
             test = (test, !!)-> return typeof test is 'string'
@@ -84,20 +64,7 @@ exports['scripts/livescript/cps_none'] =
 
 
 # *** JAVASCRIPT ***
-exports['scripts/javascript/cps_explicit'] =
-   extension: '.js'
-   content: """
-            'use cps'
-            var test = function(test, !!){
-               return (typeof test === 'string');
-            };
-            exports['test'] = function(!!){
-               result = test('test', !!);
-               return result;
-            };
-            """
-
-exports['scripts/javascript/cps_implicit'] =
+exports['scripts/javascript/cps'] =
    extension: '.js'
    content: """
             var test = function(test, !!){
@@ -189,7 +156,7 @@ exports['styles/sass/test_sass'] =
 
             .success
                @extend .message
-               border-color: green
+               borderColor: green
 
             .error
                @extend .message

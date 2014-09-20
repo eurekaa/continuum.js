@@ -47,6 +47,7 @@ exports['info'] = ->
    repository: info.repository.url 
    bugs: info.bugs.url
 
+
 config = null
 exports['setup'] = (options)->
    
@@ -75,7 +76,6 @@ exports['setup'] = (options)->
    commander.option '-i, --input <dir>', 'defines input directory for batching files.'
    commander.option '-o, --output <dir>', 'defines output directory for batched files.'
    commander.option '-t, --transformation', 'enables continuos passing style callbacks transformation.'
-   commander.option '-e, --explicit', 'produces callbacks transformation only if "use cps" is explicitly declared at the beginning of file.'
    commander.option '-s, --source_map [dir]', 'enables source maps generation and optionally defines directory.'
    commander.option '-c, --cache [dir]', 'enables files caching and optionally defines directory.'
    commander.option '-l, --log [dir]', 'enables logging and optionally defines directory.'
@@ -94,8 +94,7 @@ exports['setup'] = (options)->
       config.log.enabled = true
       config.log.path = if _.isString commander.log then commander.log else config.log.path
    if commander.transformation is true then config.transformation.enabled = true
-   if commander.explicit is true then config.transformation.explicit = true
-
+   
    # setup configurations.
    # input.
    config.input.path = './' if config.input.path is '.'
@@ -182,18 +181,13 @@ exports['run'] = (options, back)->
          input.find_compiler = -> _.find config.compilation.compilers, (compiler)->
             if _.isArray compiler.input_extension then _.contains compiler.input_extension, input.extension
             else compiler.input_extension is input.extension
-         input.is_js = -> input.extension is 'js'
-         input.is_css = -> input.extension is 'css' 
-         input.is_html = -> input.extension is 'html' or input.extension is 'htm'
          input.code = ''
          
          output = {}
          output.extension = input.find_compiler()?.output_extension ? input.extension
          output.file = input.file.replace(config.input.path, config.output.path).replace '.' + input.extension, '.' + output.extension
          output.directory = config.output.path + '\\' + path.dirname path.relative(config.output.path, output.file) 
-         output.is_js = -> input.is_js() or input.find_compiler()?.output_extension is 'js'
-         output.is_css = -> input.is_css() or input.find_compiler()?.output_extension is 'css'
-         output.is_html = -> input.is_html() or input.find_compiler()?.output_extension is 'html' 
+         output.is_js = -> input.extension is 'js' or input.find_compiler()?.output_extension is 'js' 
          output.code = ''
 
          source_map = {}
@@ -248,26 +242,18 @@ exports['run'] = (options, back)->
                # skip if interrupted. 
                if failed is true then return back()
                
-               # strip comments.
-               if input.is_js() or input.is_css() or input.is_html()
-                  output.code = strip_comments output.code
-               
-               # wrap javascript in a closure.
-               #if input.is_js() and not _.startsWith output.code, '(function () {' 
-               #   output.code = '(function () {\n' + output.code + '\n}.call(this));'
-               
                # replace cps callback marker with a compilation safer one
                # or stop processing if marker is detected and transformation is disabled. 
-               if output.is_js() and config.transformation.enabled is true and 
-               (config.transformation.explicit is true and not string(output.code).contains config.transformation.explicit_token) and
-               (string(output.code).contains config.transformation.lazy_marker or string(output.code).contains config.transformation.strict_marker)
-                  failed = true
-                  log.error 'callback markers detected but transformation is disabled or not explicit.'
-               else
-                  output.code = string(output.code)
-                  .replaceAll config.transformation.strict_marker, config.transformation.strict_safe_marker
-                  .replaceAll config.transformation.lazy_marker, config.transformation.lazy_safe_marker
-                  .toString()
+               if output.is_js() 
+                  if config.transformation.enabled is false and
+                  (string(output.code).contains config.transformation.lazy_marker or string(output.code).contains config.transformation.strict_marker)
+                     failed = true
+                     log.error 'callback markers detected but transformation is disabled.'
+                  else
+                     output.code = string(output.code)
+                     .replaceAll config.transformation.strict_marker, config.transformation.strict_safe_marker
+                     .replaceAll config.transformation.lazy_marker, config.transformation.lazy_safe_marker
+                     .toString()
                
                return back()
             
@@ -279,12 +265,14 @@ exports['run'] = (options, back)->
                # skip if not enabled.
                if config.compilation.enabled isnt true then return back()
                # skip non compilable files.
-               if not input.find_compiler()? or input.is_js() or input.is_css() or input.is_html() then return back()
-
-               option = {}
-               option.source_map = source_map.code if source_map.is_enabled()
-               option.config = input.find_compiler()?.options or {} 
-               api.compile file: input.file, code: output.code, option, (err, result)->
+               if not _.has api.compile, input.extension then return back()
+                
+               api.compile[input.extension]
+                  file: input.file
+                  code: output.code
+                  source_map: if source_map.is_enabled() then source_map.code else null
+                  options: input.find_compiler()?.options or {}
+               , (err, result)->
                   if err
                      failed = true
                      log.error err.message
@@ -306,15 +294,17 @@ exports['run'] = (options, back)->
                if config.transformation.enabled is false then return back()
                # skip non transformable files.
                if not output.is_js() then return back()
-               # skip if explicit is required and no 'use cps' is declared in file.
-               if config.transformation.explicit is true and not string(output.code).contains config.transformation.explicit_token then return back()
+               # skip if cps markers are not finded in code.
+               if not (string(output.code).contains config.transformation.lazy_safe_marker or string(output.code).contains config.transformation.strict_safe_marker) then return back()
                
-               option = {}
-               option.source_map = source_map.code if source_map.is_enabled()
-               option.config = {}
-               option.config.lazy_marker = config.transformation.lazy_safe_marker
-               option.config.strict_marker = config.transformation.strict_safe_marker
-               api.transform_cps file: output.file, code: output.code, option, (err, result)->
+               api.transform.cps 
+                  file: output.file 
+                  code: output.code
+                  source_map: if source_map.is_enabled() then source_map.code else null
+                  options:
+                     lazy_marker: config.transformation.lazy_safe_marker
+                     strict_marker: config.transformation.strict_safe_marker
+               , (err, result)->
                   if err 
                      failed = true
                      log.error err.message
@@ -334,18 +324,27 @@ exports['run'] = (options, back)->
                # skip if not enabled.
                if config.analysis.enabled isnt true then return back()
                # skip non analizable files.
-               if not (output.is_js() or output.is_css() or output.is_html()) then return back()
-               option = {}
-               option.source_map = source_map.code if source_map.is_enabled()
-               option.config = config.analysis[output.extension]?.options
-               api.analize file: output.file, code: output.code, option, (err, result)->
+               if not _.has api.analize, output.extension then return back()
+               
+               api.analize[output.extension]
+                  file: output.file
+                  source: input.code
+                  code: output.code
+                  source_map: if source_map.is_enabled() then source_map.code else null
+                  options: config.analysis[output.extension] or {}
+               , (err, warnings)->
                   if err
                      log.error err.message 
                      log.trace err.stack
                      log.error 'code analysis: FAILED!'
                   else
-                     for warn in result.warnings then log.warn warn.message + ' - [' + warn.line + ', ' + warn.column + ']: ' + warn.evidence
-                     log.debug 'code analysis: done! [warnings: ' + result.warnings.length + ']'
+                     # output source mapped warnings first.
+                     warnings = _.sortBy warnings, (warning)-> warning.source_mapped is false
+                     for warning in warnings
+                        type = if warning.source_mapped is true then 'S' else 'C'
+                        log.warn warning.message + ' - ' + type + '[' + warning.line + ', ' + warning.column + ']: ' + warning.code
+                     legend = if warnings.length isnt 0 then 'S: source, C: compiled' else ''
+                     log.debug 'code analysis: done! [warnings: ' + warnings.length + '] ' + legend
                   return back()
             
             
@@ -355,7 +354,8 @@ exports['run'] = (options, back)->
                if failed is true then return back()
                
                # add source map reference to output if required.
-               #if source_map.is_enabled() then output.code += '\n' + source_map.link
+               if source_map.is_enabled() then output.code += '\n' + source_map.link
+               
                async.series [
                   (back)-> fs_tools.mkdir output.directory, back
                   (back)-> fs.writeFile output.file, output.code, back
@@ -364,7 +364,7 @@ exports['run'] = (options, back)->
                      failed = true
                      log.error err.message
                      log.trace err.stack
-                     log.error 'writing output: FAILED!'
+                     log.error 'writing output file: FAILED!'
                   return back()
             
             
@@ -419,7 +419,6 @@ exports['run'] = (options, back)->
                else
                   batch.successes++
                   log.info 'processing file: done!\n'
-               log
                log.flush()
                batch.ended = Date.now()
                batch.duration = ((batch.ended - batch.started) / 1000) + 's'

@@ -58,18 +58,12 @@ js_test.Test.describe 'api.js', ->
       
       @.it 'performs cps transformation correctly.', (done)->
          async.each languages, (language, next)->
-            expect(fs.existsSync('./' + options.output.path + '/scripts/' + language + '/cps_explicit.js')).to.be.true
-            test = require './' + options.output.path + '/scripts/' + language + '/cps_explicit.js'
+            expect(fs.existsSync('./' + options.output.path + '/scripts/' + language + '/cps.js')).to.be.true
+            test = require './' + options.output.path + '/scripts/' + language + '/cps.js'
             test.test (err, result)->
                expect(err).to.be.null
                expect(result).to.be.true
                next()
-         , done
-      
-      @.it 'do not performs cps transformation when "explicit" is enabled and "use cps" is missing.', (done)->
-         async.each languages, (language, next)->
-            expect(fs.existsSync('./' + options.output.path + '/scripts/' + language + '/cps_implicit.js')).to.be.false
-            next()
          , done
       
       @.it 'leaves the code as it is when cps is not used.', (done)->
