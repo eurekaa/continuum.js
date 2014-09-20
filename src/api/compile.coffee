@@ -148,10 +148,21 @@ exports['less'] = (input, back)->
       output.source_map = null
       output.warnings = []
       
-      less.render input.code, (err, compiled)->
+      options = {}
+      options = _.merge options, (input.config or {})
+      if _.isObject input.source_map
+         options.sourceMap = true
+         options.writeSourceMap = (map)-> 
+            output.source_map = JSON.parse map
+            output.source_map.sourceRoot = input.source_map.root or ''
+            output.source_map.sources = input.source_map.sources
+            output.source_map.file = input.source_map.file or ''
+      
+      less.render input.code, options, (err, compiled, map)->
          if err then return back err
          output.code = compiled
          return back null, output
+         
    
    catch err then return back err
 
