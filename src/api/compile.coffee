@@ -55,7 +55,7 @@ exports['coffeescript'] = (input, back)->
       options = _.merge options, (input.options or {})
       if _.isObject input.source_map
          options.sourceMap = true
-         options.sourceRoot = input.source_map.root or ''
+         options.sourceRoot = input.source_map.sourceRoot or ''
          options.sourceFiles = input.source_map.sources or []
          options.generatedFile = input.source_map.file or ''
       
@@ -105,7 +105,7 @@ exports['sass'] = (input, back)->
       options = {}
       options.file = input.file
       options.data = input.code
-      options = _.merge options, (input.config or {})
+      options = _.merge options, (input.options or {})
       if _.isObject input.source_map
          options.sourceComments = 'map'
          options.sourceMap = '.' # bugfix: use fake path and replace later.
@@ -121,9 +121,9 @@ exports['sass'] = (input, back)->
                mappings = _.trim(mappings).replace(/\}/g, '').replace(/\n/g, '').replace(/"/g, '')
                output.source_map =
                   version: 3
-                  file: input.source_map.file
-                  sourceRoot: input.source_map.root or ''
-                  sources: input.source_map.sources
+                  file: input.source_map.file or ''
+                  sourceRoot: input.source_map.sourceRoot or ''
+                  sources: input.source_map.sources or []
                   names: []
                   mappings: mappings
             return back null, output
@@ -149,13 +149,13 @@ exports['less'] = (input, back)->
       output.warnings = []
       
       options = {}
-      options = _.merge options, (input.config or {})
+      options = _.merge options, (input.options or {})
       if _.isObject input.source_map
          options.sourceMap = true
          options.writeSourceMap = (map)-> 
             output.source_map = JSON.parse map
-            output.source_map.sourceRoot = input.source_map.root or ''
-            output.source_map.sources = input.source_map.sources
+            output.source_map.sourceRoot = input.source_map.sourceRoot or ''
+            output.source_map.sources = input.source_map.sources or []
             output.source_map.file = input.source_map.file or ''
       
       less.render input.code, options, (err, compiled, map)->
@@ -173,24 +173,26 @@ exports['stylus'] = (input, back)->
    if not _.isString input.file then return back new Error('input.file is required {string}.')
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
-
+      
       input.code = input.code or fs.readFileSync input.file, 'utf-8'
-
+      
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
-      options = {}
-      options.filename = input.file
-      options.sourcemaps = _.isObject options.source_map
-      options.compress = false
-      options.linenos = true
-      options = _.merge options, (input.config or {})
-
-      stylus.render input.code, options, (err, compiled)->
+      stylus = stylus input.code
+      stylus.set 'filename', input.file
+      stylus.set 'options', input.options or {}
+      stylus.set 'sourcemap', comment: false
+      
+      stylus.render (err, compiled)->
          if err then return back err
          output.code = compiled
+         output.source_map = stylus.sourcemap
+         output.source_map.file = input.source_map.file or ''
+         output.source_map.sourceRoot = input.source_map.sourceRoot or ''
+         output.source_map.sources = input.source_map.sources or []
          return back null, output
 
    catch err then return back err
@@ -211,7 +213,7 @@ exports['jade'] = (input, back)->
       output.warnings = []
       
       options = {}
-      options = _.merge options, (input.config or {})
+      options = _.merge options, (input.options or {})
       
       jade.render input.code, options, (err, compiled)->
          if err then return back err

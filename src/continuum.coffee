@@ -354,7 +354,7 @@ exports['run'] = (options, back)->
                if failed is true then return back()
                
                # add source map reference to output if required.
-               if source_map.is_enabled() then output.code += '\n' + source_map.link
+               if source_map.is_enabled() and _.has source_map.code, 'mappings' then output.code += '\n' + source_map.link
                
                async.series [
                   (back)-> fs_tools.mkdir output.directory, back
