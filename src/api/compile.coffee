@@ -258,8 +258,12 @@ exports['jade'] = (input, back)->
 
 
 # extension mappings.
-exports['litcoffee'] = @['coffeescript']
 exports['coffee'] = @['coffeescript']
+exports['litcoffee'] = @['coffeescript']
 exports['ls'] = @['livescript']
+exports['less'] = @['less']
+exports['sass'] = @['sass']
 exports['scss'] = @['sass']
 exports['styl'] = @['stylus']
+exports['stylus'] = @['stylus']
+exports['jade'] = @['jade']
