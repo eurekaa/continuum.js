@@ -237,7 +237,7 @@ exports['run'] = (options, back)->
                return back()
             
             
-            # code normalization.
+            # perform pre-compilation.
             (back)->
                # skip if interrupted. 
                if failed is true then return back()
@@ -270,7 +270,7 @@ exports['run'] = (options, back)->
                api.compile[input.extension]
                   file: input.file
                   code: output.code
-                  source_map: if source_map.is_enabled() then source_map.code else null
+                  source_map: source_map.code if source_map.is_enabled()
                   options: input.find_compiler()?.options or {}
                , (err, result)->
                   if err
@@ -281,7 +281,7 @@ exports['run'] = (options, back)->
                   else 
                      output.code = result.code
                      source_map.code = result.source_map
-                     log.warn warn for warn in result.warnings
+                     log.warn warning for warning in result.warnings
                      log.debug 'compilation: done! [warnings: ' + result.warnings.length + ']'
                   return back()
             
@@ -300,7 +300,7 @@ exports['run'] = (options, back)->
                api.transform.cps 
                   file: output.file 
                   code: output.code
-                  source_map: if source_map.is_enabled() then source_map.code else null
+                  source_map: source_map.code if source_map.is_enabled()
                   options:
                      lazy_marker: config.transformation.lazy_safe_marker
                      strict_marker: config.transformation.strict_safe_marker
@@ -313,7 +313,8 @@ exports['run'] = (options, back)->
                   else
                      output.code = result.code
                      source_map.code = result.source_map
-                     log.debug 'cps transformation: done!'
+                     log.warn warning for warning in result.warnings
+                     log.debug 'cps transformation: done! [warnings: ' + result.warnings.length + ']'
                   return back()
             
             
@@ -328,9 +329,9 @@ exports['run'] = (options, back)->
                
                api.analize[output.extension]
                   file: output.file
-                  source: input.code
                   code: output.code
-                  source_map: if source_map.is_enabled() then source_map.code else null
+                  source: input.code
+                  source_map: source_map.code if source_map.is_enabled()
                   options: config.analysis[output.extension] or {}
                , (err, warnings)->
                   if err
@@ -345,6 +346,34 @@ exports['run'] = (options, back)->
                         log.warn warning.message + ' - ' + type + '[' + warning.line + ', ' + warning.column + ']: ' + warning.code
                      legend = if warnings.length isnt 0 then 'S: source, C: compiled' else ''
                      log.debug 'code analysis: done! [warnings: ' + warnings.length + '] ' + legend
+                  return back()
+            
+            
+            # perform compression.
+            (back)->
+               # skip if process is interrupted.
+               if failed is true then return back()
+               # skip if compression is not enabled.
+               if config.compression.enabled is false then return back()
+               # skip if file cannot be compressed.
+               if not _.has api.compress, output.extension then return back()
+               
+               api.compress[output.extension]
+                  file: output.file
+                  code: output.code
+                  source_map: source_map.code if source_map.is_enabled()
+                  options: config.compression[output.extension] or {}
+               , (err, result)->
+                  if err
+                     failed = true
+                     log.error err.message
+                     log.trace err.stack
+                     log.error 'compression: FAILED!'
+                  else
+                     output.code = result.code
+                     source_map.code = result.source_map
+                     log.warn warning for warning in result.warnings
+                     log.debug 'compression: done! [warnings: ' + result.warnings.length + ']'
                   return back()
             
             

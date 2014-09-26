@@ -234,9 +234,7 @@
     
     "compression": {
         "enabled": true,
-        "js": {
-            "options": {}
-        }
+        "js": {}
     },
     
     "packaging": {}
