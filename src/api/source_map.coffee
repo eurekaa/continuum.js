@@ -16,7 +16,7 @@ exports['create'] = -> new source_map.SourceMapGenerator()
 exports['parse'] = (map)-> new source_map.SourceMapConsumer map
 
 
-exports['renew'] = (original, generated)->
+exports['map_back'] = (generated, original)->
    renewed = @.create()
    generated = @.parse generated
    original = @.parse original
@@ -25,11 +25,13 @@ exports['renew'] = (original, generated)->
          source: original_mapping.source
          line: original_mapping.generatedLine
          column: original_mapping.generatedColumn
-      renewed.addMapping
-         original: line: original_mapping.originalLine, column: original_mapping.originalColumn
-         generated: line: generated_mapping.line, column: generated_mapping.column
-         source: original_mapping.source
-         name: original_mapping.name
+         
+      if generated_mapping.line isnt null and generated_mapping isnt null
+         renewed.addMapping
+            original: line: original_mapping.originalLine, column: original_mapping.originalColumn
+            generated: line: generated_mapping.line, column: generated_mapping.column
+            source: original_mapping.source
+            name: original_mapping.name
    renewed = JSON.parse renewed.toString()
    renewed.file = original.file
    return renewed
