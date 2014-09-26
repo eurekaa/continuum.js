@@ -379,10 +379,11 @@ exports['run'] = (options, back)->
                      log.trace err.stack
                      log.error 'compression: FAILED!'
                   else
+                     saved = 100 - Math.round((result.code.length * 100) / output.code.length)
                      output.code = result.code
                      source_map.code = result.source_map
                      log.warn warning for warning in result.warnings
-                     log.debug 'compression: done! [warnings: ' + result.warnings.length + ']'
+                     log.debug 'compression: done! [warnings: ' + result.warnings.length + ', saved: ' + saved + '% ]'
                   return back()
             
             
