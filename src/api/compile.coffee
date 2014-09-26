@@ -43,13 +43,16 @@ exports['coffeescript'] = (input, back)->
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
       
-      input.code = input.code or fs.readFileSync input.file, 'utf-8'
-      
+      # read input code.
+      input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
+
+      # prepare output.
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
+      # prepare compiler options.
       options = {}
       options.filename = input.file
       options = _.merge options, (input.options or {})
@@ -59,9 +62,13 @@ exports['coffeescript'] = (input, back)->
          options.sourceFiles = input.source_map.sources or []
          options.generatedFile = input.source_map.file or ''
       
+      # compile code.
       compiled = coffeescript.compile input.code, options
+      
+      # return output.
       output.code = compiled.js or compiled
       output.source_map = JSON.parse compiled.v3SourceMap if compiled.v3SourceMap
+      output.warnings = []
       return back null, output
    
    catch err then return back err
@@ -74,15 +81,21 @@ exports['livescript'] = (input, back)->
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
       
-      input.code = input.code or fs.readFileSync input.file, 'utf-8'
+      # read input code.
+      input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
       
+      # prepare output.
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
-      if _.isObject input.source_map then output.warnings.push 'livescript doesn\'t support source maps.'
-      output.code = livescript.compile input.code #, input.options #@todo: pass livescript options.
+      # compile code 
+      compiled = livescript.compile input.code #, input.options #@todo: pass livescript options.
+      
+      # return output.
+      output.code = compiled
+      output.warnings.push 'livescript doesn\'t support source maps.' if _.isObject input.source_map
       return back null, output
    
    catch err then return back err
@@ -95,13 +108,16 @@ exports['sass'] = (input, back)->
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
       
-      input.code = input.code or fs.readFileSync input.file, 'utf-8'
+      # read input code.
+      input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
       
+      # prepare output.
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
+      # prepare compilation options.
       options = {}
       options.file = input.file
       options.data = input.code
@@ -110,7 +126,9 @@ exports['sass'] = (input, back)->
          options.sourceComments = 'map'
          options.sourceMap = '.' # bugfix: use fake path and replace later.
          options.outFile = '.'
+      
       options.error = (err)-> return back new Error(err.replace(options.file + ':', '').replace('\n', ''))
+      
       options.success = (compiled, map)->
          try
             output.code = compiled
@@ -129,6 +147,7 @@ exports['sass'] = (input, back)->
             return back null, output
          catch err then return back err
       
+      # compile code.
       sass.render options 
    
    catch err then return back err
@@ -141,25 +160,33 @@ exports['less'] = (input, back)->
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
       
-      input.code = input.code or fs.readFileSync input.file, 'utf-8'
+      # read input code.
+      input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
       
+      # prepare output.
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
+      # prepare compilation options.
       options = {}
       options = _.merge options, (input.options or {})
       if _.isObject input.source_map
          options.sourceMap = true
+         
+         # return source map.
          options.writeSourceMap = (map)-> 
             output.source_map = JSON.parse map
             output.source_map.sourceRoot = input.source_map.sourceRoot or ''
             output.source_map.sources = input.source_map.sources or []
             output.source_map.file = input.source_map.file or ''
       
-      less.render input.code, options, (err, compiled, map)->
+      # compile code.
+      less.render input.code, options, (err, compiled)->
          if err then return back err
+         
+         # return output.
          output.code = compiled
          return back null, output
    
@@ -173,20 +200,26 @@ exports['stylus'] = (input, back)->
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
       
-      input.code = input.code or fs.readFileSync input.file, 'utf-8'
+      # read input code.
+      input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
       
+      # prepare output.
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
+      # prepare compilation options.
       stylus = stylus input.code
       stylus.set 'filename', input.file
       stylus.set 'options', input.options or {}
       stylus.set 'sourcemap', comment: false
       
+      # compile code.
       stylus.render (err, compiled)->
          if err then return back err
+         
+         # return output.
          output.code = compiled
          output.source_map = stylus.sourcemap
          output.source_map.file = input.source_map.file or ''
@@ -204,21 +237,28 @@ exports['jade'] = (input, back)->
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
       
-      input.code = input.code or fs.readFileSync input.file, 'utf-8'
+      # read input code.
+      input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
       
+      # prepare output.
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
+      # compile code.
       jade.render input.code, (input.options or {}), (err, compiled)->
          if err then return back err
+         
+         # return output.
          output.code = compiled
          return back null, output
    
    catch err then return back err  
 
 
+# extension mappings.
+exports['litcoffee'] = @['coffeescript']
 exports['coffee'] = @['coffeescript']
 exports['ls'] = @['livescript']
 exports['scss'] = @['sass']
