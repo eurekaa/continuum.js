@@ -63,6 +63,11 @@ exports['cps'] = (input, back)->
       input.code = fs.readFileSync input.file, 'utf-8' if not _.isString input.code or not _.isObject input.ast
       input.ast = ast.parse input.code, locations: input.source_map_enabled if not _.isObject input.ast
 
+      output = {}
+      output.code = null
+      output.source_map = null
+      output.warnings = []
+
       # start with continuous passing style transformation.
       callback = {}
       callback.lazy = ast.create.identifier(input.options?.lazy_marker or '$back')
@@ -209,7 +214,6 @@ exports['cps'] = (input, back)->
          sourceMapWithCode: input.source_map_enabled
          sourceMap: input.source_map.sources[0] if input.source_map_enabled is true
       
-      output = {}
       output.code = transformed.code or transformed
 
       # add escodegen missing properties.
@@ -217,8 +221,9 @@ exports['cps'] = (input, back)->
          output.source_map = JSON.parse transformed.map
          output.source_map.file = input.source_map.file
          output.source_map.sourceRoot = input.source_map.sourceRoot or ''
-         # renew source map if an existing is provided.
-         if input.source_map_exists is true then output.source_map = source_map.renew input.source_map, output.source_map
+         
+         # map back to sources if an existing source map is provided.
+         if input.source_map_exists is true then output.source_map = source_map.map_back output.source_map, input.source_map
       
       return back null, output
    
