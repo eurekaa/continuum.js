@@ -12,11 +12,15 @@ fs = require 'fs'
 fs_tools = require 'fs-tools'
 path = require 'path'
 string = require 'string'
-async = require 'async' 
+async = require 'async'
 _ = require 'lodash'
+_.mixin require('underscore.string').exports()
 strip_comments = require 'strip-comments'
-api = require './api.js'
 log4js = require 'log4js'
+api = require './api.js'
+
+
+# buffered logger for asynchronous logging.
 log4js.getBufferedLogger = (category)->
    base_logger = log4js.getLogger category
    logger = {}
@@ -154,9 +158,9 @@ exports['setup'] = (options)->
 
 exports['run'] = (options, back)->
    try
-      
-      # setup runtime with provided options.
       if _.isFunction options then back = options; options = {}
+      
+      # setup runtime with provided options and logger.
       config = @.setup options
       logger = log4js.getLogger ' '
       
@@ -175,19 +179,23 @@ exports['run'] = (options, back)->
       fs_tools.walk config.input.path, (input_file, input_info, next)->
          
          input = {}
-         input.extension = path.extname(input_file).replace '.', ''
+         input.extension = path.extname(input_file).replace('.', '').toLowerCase()
          input.file = input_file
          input.directory = path.dirname input.file
-         input.find_compiler = -> _.find config.compilation.compilers, (compiler)->
-            if _.isArray compiler.input_extension then _.contains compiler.input_extension, input.extension
-            else compiler.input_extension is input.extension
+         input.is_image = -> input.extension is 'png' or input.extension is 'gif' or input.extension is 'jpg' or input.extension is 'jpeg' 
+         input.find_compiler = -> 
+            _.find config.compilation.compilers, (compiler)->
+               if _.isArray compiler.input_extension then _.contains compiler.input_extension, input.extension
+               else compiler.input_extension is input.extension
+         input.encoding = if input.is_image() then 'base64' else 'utf8'
          input.code = ''
          
          output = {}
-         output.extension = input.find_compiler()?.output_extension ? input.extension
+         output.extension = input.find_compiler()?.output_extension.toLowerCase() ? input.extension
          output.file = input.file.replace(config.input.path, config.output.path).replace '.' + input.extension, '.' + output.extension
          output.directory = config.output.path + '\\' + path.dirname path.relative(config.output.path, output.file) 
-         output.is_js = -> input.extension is 'js' or input.find_compiler()?.output_extension is 'js' 
+         output.is_js = -> input.extension is 'js' or input.find_compiler()?.output_extension is 'js'
+         output.encoding = input.encoding
          output.code = ''
 
          source_map = {}
@@ -226,15 +234,16 @@ exports['run'] = (options, back)->
          async.series [
             
             # read input file.
-            (back)-> fs.readFile input.file, 'utf-8', (err, result)->
-               if err
-                  failed = true
-                  log.error err.message
-                  log.trace err.stack
-                  log.error 'reading input: FAILED!'
-               else input.code = result
-               output.code = input.code
-               return back()
+            (back)-> 
+               fs.readFile input.file, encoding: input.encoding, (err, result)->
+                  if err
+                     failed = true
+                     log.error err.message
+                     log.trace err.stack
+                     log.error 'reading input: FAILED!'
+                  else input.code = result
+                  output.code = input.code
+                  return back()
             
             
             # perform pre-compilation.
@@ -387,7 +396,7 @@ exports['run'] = (options, back)->
                
                async.series [
                   (back)-> fs_tools.mkdir output.directory, back
-                  (back)-> fs.writeFile output.file, output.code, back
+                  (back)-> fs.writeFile output.file, output.code, encoding: output.encoding, back
                ], (err)->
                   if err
                      failed = true
