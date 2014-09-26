@@ -8,7 +8,7 @@
 # Created: 22/07/14 19.28
 
 
-async = require 'async'
+fs = require 'fs'
 
 # runtime options.
 exports['options'] =
@@ -19,6 +19,15 @@ exports['options'] =
    log: enabled: true, path: 'examples/log', name: 'test', levels: console: 'ALL', file: 'OFF'
    transformation: enabled: true, explicit: true
 
+
+# *** IMAGES ***
+exports['media/images/logo_rubik_jpg'] = 
+   extension: '.jpg'
+   content: new Buffer(fs.readFileSync('../media/images/logo_rubik.jpg')).toString('base64')
+
+exports['media/images/logo_rubik_png'] = 
+   extension: '.png'
+   content: new Buffer(fs.readFileSync('../media/images/logo_rubik.png')).toString('base64')
 
 # *** COFFEESCRIPT ***
 exports['scripts/coffeescript/cps'] = 
