@@ -14,7 +14,7 @@ _.mixin require('underscore.string').exports()
 
 uglify = require 'uglify-js'
 csswring = require('csswring').wring
-imagemin = require 'image-min'
+imagemin = require 'imagemin'
 source_map = require './source_map.js'
 
 ###
@@ -127,25 +127,33 @@ exports['image'] = (input, back)->
    if not _.isFunction back then return throw new Error('callback is required {function}.')
    if not _.isObject input then return back new Error('input is required {object}.')
    if not _.isString input.file then return back new Error('input.file is required {string}.')
-   
    try
       
-      input.code = fs.readFileSync input.file, 'utf-8' if not _.isString input.code or _.isEmpty input.code
+      # read input code.
+      input.extension = path.extname(input.file).toLowerCase().replace '.', ''
+      input.code = fs.readFileSync input.file, 'base64' if _.isEmpty input.code
       
+      # prepare output.
       output = {}
       output.code = null
       output.source_map = null
       output.warnings = []
       
-      options = {}
-      options.ext = path.extname input.file
-      options.interlaced = true # gif only.
-      options.pngquant = true # png only.
-      options.progressive = true # jpg only.
+      # prepare compression options.
+      batch = new imagemin()
+      batch.src(new Buffer(input.code, 'base64'))
+      if input.extension is 'png' then batch.use imagemin.pngquant()
+      if input.extension is 'gif' then batch.use imagemin.gifsicle(interlaced: true)
+      if input.extension is 'jpg' or input.extension is 'jpeg' then batch.use imagemin.jpegtran(progressive: true)
+      if input.extension is 'svg' then batch.use imagemin.svgo()
       
-      output.code = imagemin input.code, options
-      
-      return back null, output
+      # compress code.
+      batch.run (err, compressed)->
+         if err then return back err
+         
+         # return output.
+         output.code = new Buffer(compressed[0].contents).toString 'base64'
+         return back null, output
    
    catch err then return back err
 
@@ -157,3 +165,4 @@ exports['png'] = @['image']
 exports['gif'] = @['image']
 exports['jpg'] = @['image']
 exports['jpeg'] = @['image']
+exports['svg'] = @['image']
