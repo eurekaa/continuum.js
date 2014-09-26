@@ -23,15 +23,18 @@ exports['options'] =
 # *** IMAGES ***
 exports['media/images/logo_rubik_jpg'] = 
    extension: '.jpg'
-   content: new Buffer(fs.readFileSync('../media/images/logo_rubik.jpg')).toString('base64')
+   encoding: 'base64'
+   content: fs.readFileSync '../media/images/logo_rubik.jpg', 'base64'
 
 exports['media/images/logo_rubik_png'] = 
    extension: '.png'
-   content: new Buffer(fs.readFileSync('../media/images/logo_rubik.png')).toString('base64')
+   encoding: 'base64'
+   content: fs.readFileSync '../media/images/logo_rubik.png', 'base64'
 
 # *** COFFEESCRIPT ***
 exports['scripts/coffeescript/cps'] = 
    extension: '.coffee'
+   encoding: 'utf8'
    content: """
             test = (test, !!!)-> typeof test is 'string'
             exports['test'] = (!!)->
@@ -43,6 +46,7 @@ exports['scripts/coffeescript/cps'] =
 
 exports['scripts/coffeescript/cps_none'] =
    extension: '.coffee'
+   encoding: 'utf8'
    content: """
             test = (test, callback)-> callback null, (typeof test is 'string')
             exports['test'] = (callback)->
@@ -55,6 +59,7 @@ exports['scripts/coffeescript/cps_none'] =
 # *** LIVESCRIPT ***
 exports['scripts/livescript/cps'] =
    extension: '.ls'
+   encoding: 'utf8'
    content: """
             test = (test, !!)-> return typeof test is 'string'
             exports['test'] = (!!)->
@@ -64,6 +69,7 @@ exports['scripts/livescript/cps'] =
 
 exports['scripts/livescript/cps_none'] =
    extension: '.ls'
+   encoding: 'utf8'
    content: """
             test = (test, callback)-> callback null, (typeof test is 'string')
             exports['test'] = (callback)->
@@ -75,6 +81,7 @@ exports['scripts/livescript/cps_none'] =
 # *** JAVASCRIPT ***
 exports['scripts/javascript/cps'] =
    extension: '.js'
+   encoding: 'utf8'
    content: """
             var test = function(test, !!){
                return (typeof test === 'string');
@@ -87,6 +94,7 @@ exports['scripts/javascript/cps'] =
 
 exports['scripts/javascript/cps_none'] =
    extension: '.js'
+   encoding: 'utf8'
    content: """
             var test = function(test, callback){
                callback(null, (typeof test === 'string'));
@@ -103,6 +111,7 @@ exports['scripts/javascript/cps_none'] =
 # *** JADE ***
 exports['pages/jade/page'] = 
    extension: '.jade'
+   encoding: 'utf8'
    content: """
             doctype
             html
@@ -117,6 +126,7 @@ exports['pages/jade/page'] =
 # *** LESS ***
 exports['styles/less/test'] = 
    extension: '.less'
+   encoding: 'utf8'
    content: """
             @base: #f938ab;
             .box-shadow(@style, @c) when (iscolor(@c)) {
@@ -137,6 +147,7 @@ exports['styles/less/test'] =
 # *** STYLUS ***
 exports['styles/stylus/test'] = 
    extension: '.styl'
+   encoding: 'utf8'
    content: """
             border-radius()
                -webkit-border-radius: arguments
@@ -157,6 +168,7 @@ exports['styles/stylus/test'] =
 # *** SASS ***
 exports['styles/sass/test_sass'] =
    extension: '.sass'
+   encoding: 'utf8'
    content: """
             .message
                border: 1px solid #ccc
@@ -178,6 +190,7 @@ exports['styles/sass/test_sass'] =
 
 exports['styles/sass/test_scss'] =
    extension: '.scss'
+   encoding: 'utf8'
    content: """
             .message {
                border: 1px solid #ccc;
@@ -204,6 +217,7 @@ exports['styles/sass/test_scss'] =
 # *** CSS ***
 exports['styles/test'] =
    extension: '.css'
+   encoding: 'utf8'
    content: """
             .box {
                color: #fe33ac;
@@ -219,6 +233,7 @@ exports['styles/test'] =
 # *** NON COMPILABLE ***
 exports['media/not_compilable'] =
    extension: '.txt'
+   encoding: 'utf8'
    content: """
             this is a non compilable test file.
             """

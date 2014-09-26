@@ -34,7 +34,7 @@ async.series [
       file_name = options.input.path + '\\' + example + examples[example].extension
       async.series [
          (back)-> fs_tools.mkdir path.dirname(file_name), back
-         (back)-> fs.writeFile file_name, examples[example].content, back
+         (back)-> fs.writeFile file_name, examples[example].content, encoding: examples[example].encoding , back
       ], next
    , back
    
