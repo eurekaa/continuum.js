@@ -162,7 +162,6 @@ exports['less'] = (input, back)->
          if err then return back err
          output.code = compiled
          return back null, output
-         
    
    catch err then return back err
 
@@ -212,10 +211,7 @@ exports['jade'] = (input, back)->
       output.source_map = null
       output.warnings = []
       
-      options = {}
-      options = _.merge options, (input.options or {})
-      
-      jade.render input.code, options, (err, compiled)->
+      jade.render input.code, (input.options or {}), (err, compiled)->
          if err then return back err
          output.code = compiled
          return back null, output
