@@ -17,7 +17,7 @@ htmlint = require 'html5-lint'
 source_map = require './source_map.js'
 
 
-exports['script'] = (input, back)->
+exports['javascript'] = (input, back)->
    if not _.isFunction back then return throw new Error('callback is required {function}.')
    if not _.isObject input then return back new Error('input is required {object}.')
    if not _.isString input.file then return back new Error('input.file is required {string}.')
@@ -122,7 +122,7 @@ exports['hypertext'] = (input, back)->
    catch err then return back err
 
 
-exports['js'] = @['script']
+exports['js'] = @['javascript']
 exports['css'] = @['stylesheet']
 exports['html'] = @['hypertext']
 exports['htm'] = @['hypertext']
