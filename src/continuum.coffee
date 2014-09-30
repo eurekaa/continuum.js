@@ -63,6 +63,7 @@ exports['setup'] = (options)->
    
    try # merge defaults with (eventually) user config.
       user_dir = path.resolve process.cwd()
+      console.log user_dir
       if fs.existsSync(user_dir + '\\continuum.json')
          user_config = fs.readFileSync user_dir + '\\continuum.json', 'utf-8'
          user_config = strip_comments user_config
@@ -182,12 +183,11 @@ exports['run'] = (options, back)->
          input.extension = path.extname(input_file).replace('.', '').toLowerCase()
          input.file = input_file
          input.directory = path.dirname input.file
-         input.is_image = -> input.extension is 'png' or input.extension is 'gif' or input.extension is 'jpg' or input.extension is 'jpeg' 
          input.find_compiler = -> 
             _.find config.compilation.compilers, (compiler)->
                if _.isArray compiler.input_extension then _.contains compiler.input_extension, input.extension
                else compiler.input_extension is input.extension
-         input.encoding = if input.is_image() then 'base64' else 'utf8'
+         input.encoding = if input.extension is 'png' or input.extension is 'gif' or input.extension is 'jpg' or input.extension is 'jpeg' then 'base64' else 'utf8'
          input.code = ''
          
          output = {}

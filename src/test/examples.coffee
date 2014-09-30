@@ -21,15 +21,25 @@ exports['options'] =
 
 
 # *** IMAGES ***
-exports['media/images/logo_rubik_jpg'] = 
+exports['media/images/logo'] = 
    extension: '.jpg'
    encoding: 'base64'
-   content: fs.readFileSync '../media/images/logo_rubik.jpg', 'base64'
+   content: fs.readFileSync '../media/images/logo.jpg', 'base64'
 
-exports['media/images/logo_rubik_png'] = 
+exports['media/images/logo2'] = 
    extension: '.png'
    encoding: 'base64'
-   content: fs.readFileSync '../media/images/logo_rubik.png', 'base64'
+   content: fs.readFileSync '../media/images/logo.png', 'base64'
+
+exports['media/images/logo3'] =
+   extension: '.gif'
+   encoding: 'base64'
+   content: fs.readFileSync '../media/images/logo.gif', 'base64'
+
+exports['media/images/logo4'] =
+   extension: '.tif'
+   encoding: 'base64'
+   content: fs.readFileSync '../media/images/logo.tif', 'base64'
 
 # *** COFFEESCRIPT ***
 exports['scripts/coffeescript/cps'] = 
