@@ -1,0 +1,10 @@
+{
+    "version": 3,
+    "sources": [
+        "..\\..\\..\\src\\styles\\sass\\test_scss.scss"
+    ],
+    "names": [],
+    "mappings": "AAAA,kCACG,sBACA,CADQ,YAER,CADS,UACF,AAGV,CAHU,QAKP,mBAAc,AAGjB,CAHiB,MAKd,iBAAc,AAGjB,CAHiB,QAKd,oBAAc,CAAA",
+    "file": "d:\\eurekaa\\progetti\\continuum2.js\\bin\\test\\examples\\bin\\styles\\sass\\test_scss.css",
+    "sourceRoot": ""
+}

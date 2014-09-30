@@ -1,0 +1,14 @@
+{
+    "version": 3,
+    "file": "d:\\eurekaa\\progetti\\continuum2.js\\bin\\test\\examples\\bin\\scripts\\javascript\\cps.js",
+    "sources": [
+        "..\\..\\..\\src\\scripts\\javascript\\cps.js"
+    ],
+    "names": [
+        "test",
+        "$back",
+        "exports",
+        "result"
+    ],
+    "mappings": "kHAAIA,KAAO,SAASA,EAAMC,OACvB,gBAAwB,gBAATD,IAAS,gBAATA,qCAElBE,SAAA,KAAkB,SAASD,aACfD,MAAK,kBAAdG,sCACOA,GAAAA"
+}

@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+var continuum = require('../continuum.js');
+continuum.run();

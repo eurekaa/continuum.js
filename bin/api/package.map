@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "package.js",
+  "sourceRoot": "..\\..",
+  "sources": [
+    "src\\api\\package.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAiBS;AAAA;AAAA"
+}

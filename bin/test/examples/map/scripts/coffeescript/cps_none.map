@@ -1,0 +1,9 @@
+{
+    "version": 3,
+    "file": "d:\\eurekaa\\progetti\\continuum2.js\\bin\\test\\examples\\bin\\scripts\\coffeescript\\cps_none.js",
+    "sources": [
+        "..\\..\\..\\src\\scripts\\coffeescript\\cps_none.coffee"
+    ],
+    "names": [],
+    "mappings": "CAAA,WAAA,GAAA,EAAA,GAAO,SAAC,EAAM,SAAY,GAAS,KAAsB,gBAAf,KAC1C,QAAQ,KAAU,SAAC,SAChB,GAAK,OAAQ,SAAC,EAAK,SAChB,GAAS,EAAK"
+}
