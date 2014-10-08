@@ -33,10 +33,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="compile.coffee" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="compile.coffee" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/api/compile.coffee">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.6497462" vertical-offset="816" max-vertical-offset="4144">
+            <state vertical-scroll-proportion="0.0" vertical-offset="816" max-vertical-offset="4144">
               <caret line="132" column="6" selection-start-line="132" selection-start-column="6" selection-end-line="132" selection-end-column="6" />
               <folding>
                 <element signature="e#1445#2863#0" expanded="false" />
@@ -46,11 +46,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="analize.coffee" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="analize.coffee" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/api/analize.coffee">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1328" max-vertical-offset="2144">
-              <caret line="98" column="99" selection-start-line="98" selection-start-column="99" selection-end-line="98" selection-end-column="99" />
+            <state vertical-scroll-proportion="0.21658206" vertical-offset="1248" max-vertical-offset="2144">
+              <caret line="86" column="30" selection-start-line="86" selection-start-column="30" selection-end-line="86" selection-end-column="30" />
               <folding />
             </state>
           </provider>
@@ -130,8 +130,8 @@
         <option value="$PROJECT_DIR$/src/continuum.coffee" />
         <option value="$PROJECT_DIR$/package.json" />
         <option value="$PROJECT_DIR$/src/continuum.json" />
-        <option value="$PROJECT_DIR$/src/api/analize.coffee" />
         <option value="$PROJECT_DIR$/src/api/compile.coffee" />
+        <option value="$PROJECT_DIR$/src/api/analize.coffee" />
       </list>
     </option>
   </component>
@@ -824,22 +824,22 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/api/analize.coffee">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1328" max-vertical-offset="2144">
-          <caret line="98" column="99" selection-start-line="98" selection-start-column="99" selection-end-line="98" selection-end-column="99" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/api/compile.coffee">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6497462" vertical-offset="816" max-vertical-offset="4144">
+        <state vertical-scroll-proportion="0.0" vertical-offset="816" max-vertical-offset="4144">
           <caret line="132" column="6" selection-start-line="132" selection-start-column="6" selection-end-line="132" selection-end-column="6" />
           <folding>
             <element signature="e#1445#2863#0" expanded="false" />
             <element signature="e#2909#3940#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/api/analize.coffee">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.21658206" vertical-offset="1248" max-vertical-offset="2144">
+          <caret line="86" column="30" selection-start-line="86" selection-start-column="30" selection-end-line="86" selection-end-column="30" />
+          <folding />
         </state>
       </provider>
     </entry>

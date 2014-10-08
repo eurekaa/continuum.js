@@ -96,6 +96,7 @@ exports['hypertext'] = (input, back)->
       warnings = []
       input.code = fs.readFileSync input.file, 'utf-8' if not input.code
       htmlint input.code, input.options, (err, result)->
+         if err and err.message is 'Bad Gateway' then return back new Error 'Web service for html5 analysis in not reachable.'
          if err then return back err
          for item in result.messages when item isnt null
             

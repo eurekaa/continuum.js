@@ -116,7 +116,7 @@
       return back(null, warnings);
     } catch (_error) {
       err = _error;
-      return back(new Error(err));
+      return back(err);
     }
   };
 
