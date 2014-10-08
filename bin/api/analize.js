@@ -116,7 +116,7 @@
       return back(null, warnings);
     } catch (_error) {
       err = _error;
-      return back(err);
+      return back(new Error(err));
     }
   };
 
@@ -138,6 +138,9 @@
       }
       return htmlint(input.code, input.options, function(err, result) {
         var item, position, warning, _i, _len, _ref;
+        if (err && err.message === 'Bad Gateway') {
+          return back(new Error('Web service for html5 analysis in not reachable.'));
+        }
         if (err) {
           return back(err);
         }

@@ -127,7 +127,7 @@
       return back(null, output);
     } catch (_error) {
       err = _error;
-      return back(err);
+      return back(new Error(err));
     }
   };
 

@@ -1,2 +1,0 @@
-(function(){var t;t=function(t,r){return r(null,"string"==typeof t)},exports.test=function(r){return t("test",function(t,n){return r(t,n)})}}).call(this);
-/*# sourceMappingURL=..\..\..\map\scripts\coffeescript\cps_none.map */

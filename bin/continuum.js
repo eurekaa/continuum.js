@@ -108,7 +108,6 @@
     }
     try {
       user_dir = path.resolve(process.cwd());
-      console.log(user_dir);
       if (fs.existsSync(user_dir + '\\continuum.json')) {
         user_config = fs.readFileSync(user_dir + '\\continuum.json', 'utf-8');
         user_config = strip_comments(user_config);

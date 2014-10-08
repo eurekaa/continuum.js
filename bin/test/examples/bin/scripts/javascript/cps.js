@@ -1,2 +1,0 @@
-var $throw=function(t){var r="undefined"!=typeof window?window:global;if(r.on_error)return r.on_error(t);throw t},test=function(t,r){try{return r?r(null,"string"==typeof t):"string"==typeof t}catch(n){return r?r(n):$throw(n)}};exports.test=function(t){try{return test("test",function(r,n){return r?t?t(r):$throw(r):t?t(null,n):n})}catch(r){return t?t(r):$throw(r)}};
-/*# sourceMappingURL=..\..\..\map\scripts\javascript\cps.map */

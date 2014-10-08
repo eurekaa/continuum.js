@@ -1,2 +1,0 @@
-var $throw=function(r){var t="undefined"!=typeof window?window:global;if(t.on_error)return t.on_error(r);throw r};(function(){var r;return r=function(r,t){try{return"function"!=typeof t?$throw(new Error("Missing callback.")):t(null,"string"==typeof r)}catch(n){return t?t(n):$throw(n)}},exports.test=function(t){try{return r("test",function(r,n){return r?t?t(r):$throw(r):t?t(null,n):n})}catch(n){return t?t(n):$throw(n)}},this.test(function(r,t){return t={error:r,value:t},t.value})}).call(this);
-/*# sourceMappingURL=..\..\..\map\scripts\coffeescript\cps.map */
