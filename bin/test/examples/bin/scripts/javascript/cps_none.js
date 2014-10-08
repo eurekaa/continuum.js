@@ -1,2 +1,2 @@
-var test=function(t,n){n(null,"string"==typeof t)};exports.test=function(t){test("test",function(n,r){t(n,r)})};
+var test=function(t,r){r(null,"string"==typeof t)};exports.test=function(t){test("test",function(r,n){t(r,n)})};
 /*# sourceMappingURL=..\..\..\map\scripts\javascript\cps_none.map */

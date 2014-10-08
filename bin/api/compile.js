@@ -29,7 +29,7 @@
            file [string]: output file path (absolute or relative to source map file).
            sourceRoot [string]: root path prepended to source paths.
            sources {array}: an array of source paths involved in mapping. 
-        options [object]: additional compiler configurations. 
+        config [object]: additional compiler configurations. 
      @param back {function}: asynchronous callback function.
      @return output {object}:
         code {string}: compiled string code.
@@ -61,7 +61,7 @@
       output.warnings = [];
       options = {};
       options.filename = input.file;
-      options = _.merge(options, input.options || {});
+      options = _.merge(options, input.config.options || {});
       if (_.isObject(input.source_map)) {
         options.sourceMap = true;
         options.sourceRoot = input.source_map.sourceRoot || '';
@@ -140,7 +140,7 @@
       options = {};
       options.file = input.file;
       options.data = input.code;
-      options = _.merge(options, input.options || {});
+      options = _.merge(options, input.config.options || {});
       if (_.isObject(input.source_map)) {
         options.sourceComments = 'map';
         options.sourceMap = '.';
@@ -201,7 +201,7 @@
       output.source_map = null;
       output.warnings = [];
       options = {};
-      options = _.merge(options, input.options || {});
+      options = _.merge(options, input.config.options || {});
       if (_.isObject(input.source_map)) {
         options.sourceMap = true;
         options.writeSourceMap = function(map) {
@@ -248,7 +248,7 @@
       output.warnings = [];
       stylus = stylus(input.code);
       stylus.set('filename', input.file);
-      stylus.set('options', input.options || {});
+      stylus.set('options', input.config.options || {});
       stylus.set('sourcemap', {
         comment: false
       });
@@ -291,7 +291,7 @@
       output.code = null;
       output.source_map = null;
       output.warnings = [];
-      return jade.render(input.code, input.options || {}, function(err, compiled) {
+      return jade.render(input.code, input.config.options || {}, function(err, compiled) {
         if (err) {
           return back(err);
         }

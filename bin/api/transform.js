@@ -6,7 +6,9 @@
 
   _ = require('lodash');
 
-  _.mixin(require('underscore.string').exports());
+  _.string = require('underscore.string');
+
+  _.mixin(_.string.exports());
 
   ast = {};
 
@@ -57,6 +59,10 @@
       return back(new Error('input.file is required {string}.'));
     }
     try {
+      output = {};
+      output.code = input.code;
+      output.source_map = input.source_map;
+      output.warnings = [];
       if (_.isString(input.source_map)) {
         input.source_map = JSON.parse(input.source_map);
       }
@@ -71,15 +77,14 @@
       if (!_.isString(input.code || !_.isObject(input.ast))) {
         input.code = fs.readFileSync(input.file, 'utf-8');
       }
+      if (!_.string.include(input.code, input.options.lazy_marker) && !_.string.include(input.code, input.options.strict_marker)) {
+        return back(null, output);
+      }
       if (!_.isObject(input.ast)) {
         input.ast = ast.parse(input.code, {
           locations: input.source_map_enabled
         });
       }
-      output = {};
-      output.code = null;
-      output.source_map = null;
-      output.warnings = [];
       callback = {};
       callback.lazy = ast.create.identifier(((_ref = input.options) != null ? _ref.lazy_marker : void 0) || '$back');
       callback.strict = ast.create.identifier(((_ref1 = input.options) != null ? _ref1.strict_marker : void 0) || '$throw');

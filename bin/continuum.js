@@ -357,7 +357,6 @@
             }
             return back();
           }, function(back) {
-            var _ref2;
             if (failed === true) {
               return back();
             }
@@ -371,9 +370,9 @@
               file: input.file,
               code: output.code,
               source_map: source_map.is_enabled() ? source_map.code : void 0,
-              options: ((_ref2 = input.find_compiler()) != null ? _ref2.options : void 0) || {}
+              config: input.find_compiler() || {}
             }, function(err, result) {
-              var warning, _i, _len, _ref3;
+              var warning, _i, _len, _ref2;
               if (err) {
                 failed = true;
                 log.error(err.message);
@@ -382,9 +381,9 @@
               } else {
                 output.code = result.code;
                 source_map.code = result.source_map;
-                _ref3 = result.warnings;
-                for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-                  warning = _ref3[_i];
+                _ref2 = result.warnings;
+                for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+                  warning = _ref2[_i];
                   log.warn(warning);
                 }
                 log.debug('compilation: done! [warnings: ' + result.warnings.length + ']');
