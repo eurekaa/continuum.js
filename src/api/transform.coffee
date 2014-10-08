@@ -10,7 +10,8 @@
 
 fs = require 'fs'
 _ = require 'lodash'
-_.mixin require('underscore.string').exports()
+_.string = require 'underscore.string'
+_.mixin _.string.exports()
 
 ast = {}
 ast.parse = require('acorn').parse
@@ -52,6 +53,11 @@ exports['cps'] = (input, back)->
    if not _.isObject input then return back new Error('input is required {object}.')
    if not _.isString input.file then return back new Error('input.file is required {string}.')
    try
+
+      output = {}
+      output.code = input.code
+      output.source_map = input.source_map
+      output.warnings = []
       
       input.source_map = JSON.parse input.source_map if _.isString input.source_map
       input.source_map_enabled = _.isObject input.source_map
@@ -59,15 +65,16 @@ exports['cps'] = (input, back)->
       if input.source_map_enabled is true and not _.isString input.source_map.file then return back new Error 'input.source_map.file is required {string}.'
       if input.source_map_enabled is true and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
 
-      # parse code.
+      # read code.
       input.code = fs.readFileSync input.file, 'utf-8' if not _.isString input.code or not _.isObject input.ast
+      
+      # skip if markers are not present in code.
+      if not _.string.include(input.code, input.options.lazy_marker) and not _.string.include(input.code, input.options.strict_marker) 
+         return back null, output
+         
+      # parse code.
       input.ast = ast.parse input.code, locations: input.source_map_enabled if not _.isObject input.ast
-
-      output = {}
-      output.code = null
-      output.source_map = null
-      output.warnings = []
-
+      
       # start with continuous passing style transformation.
       callback = {}
       callback.lazy = ast.create.identifier(input.options?.lazy_marker or '$back')
