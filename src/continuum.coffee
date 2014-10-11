@@ -63,7 +63,6 @@ exports['setup'] = (options)->
    
    try # merge defaults with (eventually) user config.
       user_dir = path.resolve process.cwd()
-      console.log user_dir
       if fs.existsSync(user_dir + '\\continuum.json')
          user_config = fs.readFileSync user_dir + '\\continuum.json', 'utf-8'
          user_config = strip_comments user_config
@@ -201,7 +200,7 @@ exports['run'] = (options, back)->
          source_map = {}
          source_map.is_enabled = -> config.source_map.enabled is true
          source_map.extension = config.source_map.extension
-         source_map.file = input.file.replace(config.input.path, config.source_map.path).replace '.' + input.extension, '.' + source_map.extension
+         source_map.file = input.file.replace(config.input.path, config.source_map.path).replace('.' + input.extension, '.' + output.extension + '.' + source_map.extension)
          source_map.directory = config.source_map.path + '\\' + path.dirname path.relative(config.source_map.path, source_map.file)
          source_map.link = '/*# sourceMappingURL=' + path.relative(output.directory, source_map.directory) + '\\' + path.basename(source_map.file) + ' */'
          source_map.code = if source_map.is_enabled() then file: path.resolve(output.file), sources: [path.relative(source_map.directory, input.file)] else undefined
@@ -209,7 +208,7 @@ exports['run'] = (options, back)->
          cache = {}
          cache.is_enabled = -> config.cache.enabled is true
          cache.extension = config.cache.extension
-         cache.file = input.file.replace(config.input.path, config.cache.path).replace '.' + input.extension, '.' + cache.extension
+         cache.file = input.file.replace(config.input.path, config.cache.path).replace('.' + input.extension, '.' + cache.extension)
          cache.directory = config.cache.path + '\\' + path.dirname path.relative(config.cache.path, cache.file)
          cache.exists = -> fs.existsSync(cache.file) and (input_info.mtime <= fs.lstatSync(cache.file).mtime)
          cache.code = ''
@@ -280,7 +279,7 @@ exports['run'] = (options, back)->
                   file: input.file
                   code: output.code
                   source_map: source_map.code if source_map.is_enabled()
-                  options: input.find_compiler()?.options or {}
+                  config: input.find_compiler() or {}
                , (err, result)->
                   if err
                      failed = true
