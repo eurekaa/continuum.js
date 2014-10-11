@@ -1,6 +1,5 @@
-/node_modules
-/bin
-/brand
-/docs
-/.idea
+docs
+brand
 bin
+.idea
+node_modules
