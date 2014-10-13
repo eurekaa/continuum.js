@@ -41,6 +41,8 @@ exports['media/images/logo4'] =
    encoding: 'base64'
    content: fs.readFileSync '../media/images/logo.tif', 'base64'
 
+
+
 # *** COFFEESCRIPT ***
 exports['scripts/coffeescript/cps'] = 
    extension: '.coffee'
@@ -222,6 +224,22 @@ exports['styles/sass/test_scss'] =
                @extend .message;
                border-color: yellow;
             }
+            """
+
+exports['styles/sass/test_compass'] =
+   extension: '.sass'
+   encoding: 'utf8'
+   content: """
+            @import compass
+            .example
+               width: 48%
+               margin-right: 2%
+               float: left
+               +clearfix
+               p
+                  padding-top: 10px 
+            #linear-gradient
+               +background-image(linear-gradient(to bottom right, white, #dddddd))
             """
 
 # *** CSS ***

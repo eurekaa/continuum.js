@@ -10,6 +10,7 @@
 
 fs = require 'fs'
 fs_tools = require 'fs-tools'
+fs_temp = require 'temp'
 path = require 'path'
 string = require 'string'
 async = require 'async'
@@ -173,6 +174,10 @@ exports['run'] = (options, back)->
       batch.successes = 0
       batch.started = Date.now()
       
+      # create a temporary directory for the batch.
+      fs_temp.track() # automatically track and cleanup at exit.
+      temp_path = fs_temp.mkdirSync 'continuum'
+      
       # walk through input and compile.
       logger.info '*** processing project: starting... ***'
       logger.debug '[input: ' + config.input.path + ', output: ' + config.output.path + ']\n'
@@ -280,6 +285,8 @@ exports['run'] = (options, back)->
                   code: output.code
                   source_map: source_map.code if source_map.is_enabled()
                   config: input.find_compiler() or {}
+                  temp_path: temp_path,
+                  cache_path: config.cache.path
                , (err, result)->
                   if err
                      failed = true

@@ -49,8 +49,18 @@
                 "options": { // https://www.npmjs.org/package/node-sass
                     "includePaths": [], // paths to include to resolve @imports.
                     "imagePath": "", // image path to prepend when you use image-url() function.
-                    "outputStyle": "nested", // nested || compressed
                     "precision": null // decimals count.
+                },
+                "compass": {
+                    "enabled": true,
+                    "options": {
+                        "output_style": ":expanded",
+                        "line_comments": false,
+                        "relative_assets": false,
+                        "http_path": "/",
+                        "images_dir": "./",
+                        "javascripts_dir": "./"
+                    }
                 }
             },
             "stylus": {
