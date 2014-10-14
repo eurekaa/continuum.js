@@ -113,6 +113,12 @@ exports['setup'] = (options)->
    config.output.info = fs.lstatSync config.output.path
    if config.output.info.isFile() then throw new Error 'output must be a directory.'
    
+   # temp.
+   config.temp.path = './' if config.temp.path is '.'
+   if not fs.existsSync config.temp.path then fs_tools.mkdirSync config.temp.path
+   config.temp.info = fs.lstatSync config.temp.path
+   if config.temp.info.isFile() then throw new Error 'temp must be a directory'
+   
    # cache.
    if config.cache.enabled is true
       config.cache.path = './' if config.cache.path is '.'
@@ -175,8 +181,8 @@ exports['run'] = (options, back)->
       batch.started = Date.now()
       
       # create a temporary directory for the batch.
-      fs_temp.track() # automatically track and cleanup at exit.
-      temp_path = fs_temp.mkdirSync 'continuum'
+      #fs_temp.track() # automatically track and cleanup at exit.
+      temp_path = config.temp.path #fs_temp.mkdirSync 'continuum'
       
       # walk through input and compile.
       logger.info '*** processing project: starting... ***'
