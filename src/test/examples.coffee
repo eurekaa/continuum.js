@@ -119,7 +119,6 @@ exports['scripts/javascript/cps_none'] =
             """
 
 
-
 # *** JADE ***
 exports['pages/jade/page'] = 
    extension: '.jade'
@@ -130,7 +129,8 @@ exports['pages/jade/page'] =
                head
                   title test continuum.js
                body
-                  #test a jade test page.
+                  require('test', '../../data/test.json')
+                  p test
                   footer
             """
 

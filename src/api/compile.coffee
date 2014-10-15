@@ -12,7 +12,8 @@ path = require 'path'
 exec = require('child_process').execFile
 async = require 'async'
 _ = require 'lodash'
-_.mixin require('underscore.string').exports()
+_.string = require 'underscore.string'
+_.mixin _.string.exports()
 
 coffeescript = require 'coffee-script'
 livescript = require 'LiveScript'
@@ -171,24 +172,24 @@ exports['compass'] = (input, back)->
                if err then return back err
                back()
          
-         # read compiled from temporary directory.
+         # read compiled from temp and delete it.
          (back)->
             compiled = input.temp_path + '\\' + path.basename(input.file).replace(path.extname(input.file), '.css')
-            fs.readFile compiled, 'utf8', (err, compiled)->
+            fs.readFile compiled, 'utf8', (err, content)->
                if err then return back err
-               output.code = compiled
-               back()
+               output.code = content
+               fs.unlink compiled, back
          
-         # read generated source map.
+         # read source map from temp and delete it.
          (back)->
             # skip if source map is not required.
             if not _.isObject input.source_map then return back()
             source_map = input.temp_path + '\\' + path.basename(input.file).replace(path.extname(input.file), '.css.map')
-            fs.readFile source_map, 'utf8', (err, source_map)->
+            fs.readFile source_map, 'utf8', (err, content)->
                if err then return back err
-               output.source_map = JSON.parse source_map
+               output.source_map = JSON.parse content
                output.source_map.file = input.source_map.file
-               back()
+               fs.unlink source_map, back
          
       ], (err)->
          if err then return back err
@@ -331,12 +332,12 @@ exports['stylus'] = (input, back)->
 
 
 exports['jade'] = (input, back)->
+   self = @
    if not _.isFunction back then return throw new Error('callback is required {function}.')
    if not _.isObject input then return back new Error('input is required {object}.')
    if not _.isString input.file then return back new Error('input.file is required {string}.')
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
-      
       # read input code.
       input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
       
@@ -346,18 +347,45 @@ exports['jade'] = (input, back)->
       output.source_map = null
       output.warnings = []
       
-      # compile code.
-      jade.render input.code, (input.config.options or {}), (err, compiled)->
-         if err then return back err
+      # prepare compiler options.
+      options = input.config.options or {}
+      options.filename = input.file
+      
+      # resolve require functions and inject variables into compiler options.
+      require = new RegExp /require\([\s\S]{0,}\)/ig 
+      match = input.code.match require 
+      input.code = input.code.replace require, ''
+      async.each match, (params, back)->
+         params = params.match(/('[\s\S]{0,}')/ig)[0].split ','
+         key = _.string.trim params[0]
+         key = _.string.unquote key, "'"
+         file = _.string.trim params[1]
+         file = _.string.unquote file, "'"
+         file = path.join(path.dirname(input.file), file)
+         file_extension = path.extname(file).replace /./, ''
+         fs.readFile file, 'utf8', (err, content)->
+            if err then return back err
+            if not _.has self, file_extension then options[key] = code; return back()
+            self[file_extension] { file: file, code: content}, (err, result)->
+               if err then return back err
+               options[key] = result.code
+               back()
+      , (err)-> 
          
-         # return output.
-         output.code = compiled
-         return back null, output
-   
-   catch err then return back err  
+         # compile input.
+         if err then return back err
+         jade.render input.code, options, (err, compiled)->
+            if err then return back err
+            
+            # return output.
+            output.code = compiled
+            return back null, output
+      
+   catch err then return back err
 
 
 # extension mappings.
+exports['json'] = @['json']
 exports['coffee'] = @['coffeescript']
 exports['litcoffee'] = @['coffeescript']
 exports['ls'] = @['livescript']
