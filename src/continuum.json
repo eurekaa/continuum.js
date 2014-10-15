@@ -255,7 +255,7 @@
             // PERFORMANCE:
             /* The following rules are aimed at improving CSS performance, 
             including runtime performance and overall code size. */
-            "font-faces": true, // Don't use too many web fonts.
+            "font-faces": true, // [boolean] Don't use too many web fonts.
             "import": true, // Disallow @import.
             "regex-selectors": true, // Disallow selectors that look like regular expressions.
             "universal-selector": true, // Disallow universal selector.
