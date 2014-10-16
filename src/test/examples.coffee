@@ -119,6 +119,17 @@ exports['scripts/javascript/cps_none'] =
             """
 
 
+# *** JSON ***
+exports['data/references'] =
+   extension: '.json'
+   encoding: 'utf8'
+   content: '{ "foo": true, "bar": { "baz": "#{foo}", "cool": [1, 2, 3] }, "stuff": "there are #{bar.cool[1]} cool stuffs? #{bar.baz}", "test": "#{bar}" }'
+
+exports['data/links'] =
+   extension: '.json'
+   encoding: 'utf8'
+   content: '{ "foo": "@{references.json}" }'
+
 # *** JADE ***
 exports['pages/jade/page'] = 
    extension: '.jade'

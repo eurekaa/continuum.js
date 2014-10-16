@@ -104,6 +104,7 @@ exports['livescript'] = (input, back)->
    
    catch err then return back err
 
+
 #@todo: do not compile partial files (ex: _base.sass)
 exports['compass'] = (input, back)->
    if not _.isFunction back then return throw new Error('callback is required {function}.')
@@ -384,8 +385,80 @@ exports['jade'] = (input, back)->
    catch err then return back err
 
 
+exports['json'] = (input, back)->
+   self = @
+   if not _.isFunction back then return throw new Error('callback is required {function}.')
+   if not _.isObject input then return back new Error('input is required {object}.')
+   if not _.isString input.file then return back new Error('input.file is required {string}.')
+   if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
+   try
+      # read input code.
+      input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
+
+      # prepare output.
+      output = {}
+      output.code = input.code
+      output.source_map = null
+      output.warnings = []
+
+      # remove comments and parse.
+      if _.isString output.code
+         output.code = output.code.replace /\/\*[\s\S]{0,}\*\//g, ''
+         output.code = output.code.replace /\/\/[\s\S]{0,}/g, ''
+         try
+            output.code = JSON.parse output.code
+         catch err then return back new Error 'invalid JSON format.'
+      
+      # prepare function to resolve references.
+      resolve = (object, back)->
+         async.each _.keys(object), (key, back)->
+            value = object[key] 
+            if _.isObject value then return resolve value, back
+            if _.isString value
+               
+               # resolve internal references #{property}.
+               matches = value.match /\#\{[\s\S]{0,}?\}/g
+               matches = [] if matches is null
+               for match in matches
+                  property = match.replace('#{', '').replace('}', '')
+                  new_value = null; eval('new_value = output.code.' + property)
+                  if _.isUndefined new_value then return back new Error match + ' reference doesn\'t exists.'
+                  if value.length isnt match.length then value = value.replace match, (if _.isObject new_value then JSON.stringify new_value else new_value)
+                  else value = new_value
+               
+               # import external json files @{file} or partials @{file#property}.
+               matches = if _.isString value then value.match /\@\{[\s\S]{0,}?\}/g else null
+               if matches isnt null 
+                  async.each matches, (match, back)->
+                     file = match.replace('@{', '').replace('}', '')
+                     file = file.split '#'
+                     property = if file.length is 2 then file[1] else null
+                     file = file[0]
+                     file = path.join(path.dirname(input.file), file)
+                     self['json'] file: file, (err, result)->
+                        if err then return back err
+                        new_value = null;
+                        if property isnt null then eval('new_value = result.code.' + property)
+                        else new_value = result.code
+                        object[key] = new_value
+                        back()
+                  , back
+               else
+                  object[key] = value
+            back()
+         , back
+      
+      # resolve json references.
+      resolve output.code, (err)->
+         if err then return back err
+         
+         # return output.
+         return back null, output
+      
+   catch err then return back err
+
+
 # extension mappings.
-exports['json'] = @['json']
 exports['coffee'] = @['coffeescript']
 exports['litcoffee'] = @['coffeescript']
 exports['ls'] = @['livescript']
@@ -395,3 +468,4 @@ exports['scss'] = @['sass']
 exports['styl'] = @['stylus']
 exports['stylus'] = @['stylus']
 exports['jade'] = @['jade']
+exports['json'] = @['json']

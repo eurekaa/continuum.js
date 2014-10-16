@@ -404,6 +404,9 @@ exports['run'] = (options, back)->
                # skip if process is interrupted.
                if failed is true then return back()
                
+               # stringify output if an object.
+               if _.isObject output.code then output.code = JSON.stringify output.code, null, 4
+               
                # add source map reference to output if required.
                if source_map.is_enabled() and _.has source_map.code, 'mappings' then output.code += '\n' + source_map.link
                
@@ -429,7 +432,7 @@ exports['run'] = (options, back)->
                if not _.has source_map.code, 'mappings' then return back()
                
                # stringify and write source maps. 
-               source_map.code = JSON.stringify source_map.code, null, 4
+               if _.isObject source_map.code then source_map.code = JSON.stringify source_map.code, null, 4
                async.series [
                   (back)-> fs_tools.mkdir source_map.directory, back
                   (back)-> fs.writeFile source_map.file, source_map.code, back
