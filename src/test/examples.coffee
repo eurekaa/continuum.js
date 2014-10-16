@@ -14,8 +14,9 @@ fs = require 'fs'
 exports['options'] =
    input: path: 'examples/src'
    output: path: 'examples/bin'
+   temp: path: 'examples/tmp'
    source_map: enabled: true, path: 'examples/map'
-   cache: enabled: true, path: 'examples/cache'
+   cache: enabled: true, path: 'examples/tmp/cache'
    log: enabled: true, path: 'examples/log', name: 'test', levels: console: 'ALL', file: 'OFF'
    transformation: enabled: true, explicit: true
 
@@ -123,12 +124,14 @@ exports['scripts/javascript/cps_none'] =
 exports['data/references'] =
    extension: '.json'
    encoding: 'utf8'
-   content: '{ "foo": true, "bar": { "baz": "#{foo}", "cool": [1, 2, 3] }, "stuff": "there are #{bar.cool[1]} cool stuffs? #{bar.baz}", "test": "#{bar}" }'
+   content: '{ "foo": true, "bar": { "baz": "#{bar}", "cool": [1, "#{stuff}", 3] }, "stuff": "there are #{bar.cool[2]} cool stuffs? #{bar.baz}", "test": "#{bar}" }'
 
+###
 exports['data/links'] =
    extension: '.json'
    encoding: 'utf8'
    content: '{ "foo": "@{references.json}" }'
+###
 
 # *** JADE ***
 exports['pages/jade/page'] = 
@@ -140,7 +143,6 @@ exports['pages/jade/page'] =
                head
                   title test continuum.js
                body
-                  require('test', '../../data/test.json')
                   p test
                   footer
             """

@@ -355,6 +355,7 @@ exports['jade'] = (input, back)->
       # resolve require functions and inject variables into compiler options.
       require = new RegExp /require\([\s\S]{0,}\)/ig 
       match = input.code.match require 
+      match = [] if match is null
       input.code = input.code.replace require, ''
       async.each match, (params, back)->
          params = params.match(/('[\s\S]{0,}')/ig)[0].split ','
@@ -392,15 +393,16 @@ exports['json'] = (input, back)->
    if not _.isString input.file then return back new Error('input.file is required {string}.')
    if _.isObject input.source_map and not _.isArray input.source_map.sources then return back new Error 'input.source_map.sources is required {array}.'
    try
+      
       # read input code.
       input.code = fs.readFileSync input.file, 'utf8' if _.isEmpty input.code
-
+      
       # prepare output.
       output = {}
       output.code = input.code
       output.source_map = null
       output.warnings = []
-
+      
       # remove comments and parse.
       if _.isString output.code
          output.code = output.code.replace /\/\*[\s\S]{0,}\*\//g, ''
@@ -409,50 +411,72 @@ exports['json'] = (input, back)->
             output.code = JSON.parse output.code
          catch err then return back new Error 'invalid JSON format.'
       
-      # prepare function to resolve references.
-      resolve = (object, back)->
+      
+      json = {}
+      json.contains_property_references = (value)-> _.isString(value) and value.match(/\#\{[\s\S]{0,}?\}/g) isnt null
+      json.contains_file_references = (value)-> _.isString(value) and value.match(/\@\{[\s\S]{0,}?\}/g) isnt null
+      # define function to resolve property references #{property}.
+      # (this function uses the external output.code variable to resolve references in the entire document,
+      # even when used on sub-properties).
+      json.resolve_property_references = (value, back)->
+         try
+            new_value = value
+            matches = value.match /\#\{[\s\S]{0,}?\}/g
+            matches = [] if matches is null
+            for match in matches
+               property = match.replace('#{', '').replace('}', '')
+               eval('new_value = output.code.' + property)
+               if new_value is match then return back new Error 'cazzo dio!'
+               if _.isUndefined new_value then return back new Error match + ' reference doesn\'t exists.'
+               if value.length isnt match.length then new_value = value.replace match, (if _.isObject new_value then JSON.stringify new_value else new_value)
+            return back null, new_value
+         catch err then return back err
+      
+      # define function to resolve external file references @{file#property}.
+      json.resolve_file_references = (value, back)->
+         try
+            new_value = value
+            matches = if _.isString value then value.match /\@\{[\s\S]{0,}?\}/g else null
+            matches = [] if matches is null
+            async.each matches, (match, back)->
+               file = match.replace('@{', '').replace('}', '')
+               file = file.split '#'
+               property = if file.length is 2 then file[1] else null
+               file = file[0]
+               file = path.join(path.dirname(input.file), file)
+               self['json'] file: file, (err, result)->
+                  if err then return back err
+                  new_value = null
+                  if property isnt null then eval('new_value = result.code.' + property)
+                  else new_value = result.code
+                  return back null, new_value
+            , (err)->
+               if err then return back err
+               return back null, new_value
+         catch err then return back err
+      
+      # define function to resolve all reference types recursively.
+      json.resolve_references = (object, back)->
          async.each _.keys(object), (key, back)->
-            value = object[key] 
-            if _.isObject value then return resolve value, back
+            value = object[key]
+            if _.isObject value then return json.resolve_references value, back
             if _.isString value
-               
-               # resolve internal references #{property}.
-               matches = value.match /\#\{[\s\S]{0,}?\}/g
-               matches = [] if matches is null
-               for match in matches
-                  property = match.replace('#{', '').replace('}', '')
-                  new_value = null; eval('new_value = output.code.' + property)
-                  if _.isUndefined new_value then return back new Error match + ' reference doesn\'t exists.'
-                  if value.length isnt match.length then value = value.replace match, (if _.isObject new_value then JSON.stringify new_value else new_value)
-                  else value = new_value
-               
-               # import external json files @{file} or partials @{file#property}.
-               matches = if _.isString value then value.match /\@\{[\s\S]{0,}?\}/g else null
-               if matches isnt null 
-                  async.each matches, (match, back)->
-                     file = match.replace('@{', '').replace('}', '')
-                     file = file.split '#'
-                     property = if file.length is 2 then file[1] else null
-                     file = file[0]
-                     file = path.join(path.dirname(input.file), file)
-                     self['json'] file: file, (err, result)->
-                        if err then return back err
-                        new_value = null;
-                        if property isnt null then eval('new_value = result.code.' + property)
-                        else new_value = result.code
-                        object[key] = new_value
-                        back()
-                  , back
-               else
-                  object[key] = value
-            back()
+               async.whilst -> 
+                  json.contains_property_references value
+               ,(back)-> 
+                  json.resolve_property_references value, (err, new_value)->
+                     if err then return back err
+                     if _.string.contains new_value, value then return back new Error 'Converting circular structure to JSON.'
+                     value = new_value
+                     object[key] = new_value
+                     return back()
+               , back
+            else return back()
          , back
       
-      # resolve json references.
-      resolve output.code, (err)->
+      # resolve all json references.
+      json.resolve_references output.code, (err)->
          if err then return back err
-         
-         # return output.
          return back null, output
       
    catch err then return back err
