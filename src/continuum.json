@@ -53,7 +53,7 @@
     
     "cache": {
         "enabled": true,
-        "path": ".",
+        "path": "tmp/cache",
         "extension": "cache"
     },
     
@@ -99,6 +99,7 @@
                     "enabled": true,
                     "options": {
                         "require": [],
+                        "cache_path": "tmp/cache_sass",
                         "output_style": ":expanded",
                         "line_comments": false,
                         "http_path": "/",
