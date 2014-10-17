@@ -349,29 +349,44 @@ exports['jade'] = (input, back)->
       output.warnings = []
       
       # prepare compiler options.
+      reserved_options = ['filename', 'doctype', 'pretty', 'self', 'debug', 'compileDebug', 'compiler']
       options = input.config.options or {}
       options.filename = input.file
       
-      # resolve require functions and inject variables into compiler options.
-      require = new RegExp /require\([\s\S]{0,}\)/ig 
-      match = input.code.match require 
-      match = [] if match is null
-      input.code = input.code.replace require, ''
-      async.each match, (params, back)->
-         params = params.match(/('[\s\S]{0,}')/ig)[0].split ','
-         key = _.string.trim params[0]
-         key = _.string.unquote key, "'"
-         file = _.string.trim params[1]
-         file = _.string.unquote file, "'"
-         file = path.join(path.dirname(input.file), file)
-         file_extension = path.extname(file).replace /./, ''
-         fs.readFile file, 'utf8', (err, content)->
-            if err then return back err
-            if not _.has self, file_extension then options[key] = code; return back()
-            self[file_extension] { file: file, code: content}, (err, result)->
+      # remove and resolve all require tags.
+      regexp = /require\(.+\)/ig 
+      requires = input.code.match regexp ? []
+      input.code = input.code.replace regexp, ''
+      async.each requires, (require, back)->
+         try
+            
+            # extract href value.
+            regexp = /href\s*=\s*[\'\"][^\'\"]*[\'\"]/ig 
+            href = require.match regexp
+            require = require.replace regexp, '' # (remove href to make ref regexp work later).
+            if href is null then return back new Error 'require is missing href property.'
+            href = href[0].split('=')[1].replace(/[\'\"]/g, '').trim()
+            extension = path.extname(href).replace(/\./, '').toLowerCase()
+            if not extension is 'json' then return back new Error 'wrong path \'' + href + '\'. you can only require json files.'
+            href = path.join(path.dirname(input.file), href)
+            if not fs.existsSync href then return back new Error '\'' + href + '\' does not exists.'
+            
+            # extract ref value.
+            regexp = /ref\s*=\s*[\'\"][^\'\"]*[\'\"]/ig 
+            ref = require.match regexp
+            if ref is null then return back new Error 'require is missing ref property.'
+            ref = ref[0].split('=')[1].replace(/[\'\"]/g, '').trim()
+            if _.contains reserved_options, ref then return back new Error '\'' + ref + '\' is a reserved word, you can\'t use it in your require.'
+            
+            # read json file and inject into compiler options.
+            fs.readFile href, 'utf8', (err, content)->
                if err then return back err
-               options[key] = result.code
-               back()
+               self['json'] { file: href, code: content}, (err, result)->
+                  if err then return back err
+                  options[ref] = result.code
+                  back()
+            
+         catch err then return back err
       , (err)-> 
          
          # compile input.
@@ -426,7 +441,6 @@ exports['json'] = (input, back)->
             for match in matches
                property = match.replace('#{', '').replace('}', '')
                eval('new_value = output.code.' + property)
-               if new_value is match then return back new Error 'cazzo dio!'
                if _.isUndefined new_value then return back new Error match + ' reference doesn\'t exists.'
                if value.length isnt match.length then new_value = value.replace match, (if _.isObject new_value then JSON.stringify new_value else new_value)
             return back null, new_value
@@ -460,17 +474,33 @@ exports['json'] = (input, back)->
          async.each _.keys(object), (key, back)->
             value = object[key]
             if _.isObject value then return json.resolve_references value, back
-            if _.isString value
-               async.whilst -> 
-                  json.contains_property_references value
-               ,(back)-> 
-                  json.resolve_property_references value, (err, new_value)->
-                     if err then return back err
-                     if _.string.contains new_value, value then return back new Error 'Converting circular structure to JSON.'
-                     value = new_value
-                     object[key] = new_value
-                     return back()
-               , back
+            if _.isString(value) then async.series [
+               
+               (back)->
+                  async.whilst -> 
+                     json.contains_property_references value
+                  ,(back)-> 
+                     json.resolve_property_references value, (err, new_value)->
+                        if err then return back err
+                        if _.string.contains new_value, value then return back new Error 'Converting circular structure to JSON.'
+                        value = new_value
+                        object[key] = new_value
+                        return back()
+                  , back
+               
+               (back)-> 
+                  async.whilst ->
+                     json.contains_file_references value
+                  ,(back)->
+                     json.resolve_file_references value, (err, new_value)->
+                        if err then return back err
+                        if _.string.contains new_value, value then return back new Error 'Converting circular structure to JSON.'
+                        value = new_value
+                        object[key] = new_value
+                        return back()
+                  ,back
+               
+            ], back
             else return back()
          , back
       

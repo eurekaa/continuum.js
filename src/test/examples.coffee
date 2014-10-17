@@ -124,14 +124,14 @@ exports['scripts/javascript/cps_none'] =
 exports['data/references'] =
    extension: '.json'
    encoding: 'utf8'
-   content: '{ "foo": true, "bar": { "baz": "#{bar}", "cool": [1, "#{stuff}", 3] }, "stuff": "there are #{bar.cool[2]} cool stuffs? #{bar.baz}", "test": "#{bar}" }'
+   content: '{ "foo": true, "bar": { "baz": "#{foo}", "cool": [1, "#{stuff}", 3] }, "stuff": "there are #{bar.cool[2]} cool stuffs? #{bar.baz}", "test": "#{bar}" }'
 
-###
+
 exports['data/links'] =
    extension: '.json'
    encoding: 'utf8'
-   content: '{ "foo": "@{references.json}" }'
-###
+   content: '{ "foo": "@{references.json}", "bar": "@{references.json#bar.cool}", "baz": "@{references.json#stuff}" }'
+
 
 # *** JADE ***
 exports['pages/jade/page'] = 
@@ -142,7 +142,8 @@ exports['pages/jade/page'] =
             html
                head
                   title test continuum.js
-               body
+               body 
+                  require(ref='test', href='../../data/references.json')
                   p test
                   footer
             """
