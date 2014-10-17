@@ -420,26 +420,26 @@ exports['json'] = (input, back)->
       
       # remove comments and parse.
       if _.isString output.code
-         output.code = output.code.replace /\/\*[\s\S]{0,}\*\//g, ''
-         output.code = output.code.replace /\/\/[\s\S]{0,}/g, ''
+         output.code = output.code.replace /\/\*[^\/\*]*\*\//igm, '' # multi-line comments.
+         output.code = output.code.replace /\/\/.+/g, '' # single-line comments.
          try
             output.code = JSON.parse output.code
          catch err then return back new Error 'invalid JSON format.'
       
       
       json = {}
-      json.contains_property_references = (value)-> _.isString(value) and value.match(/\#\{[\s\S]{0,}?\}/g) isnt null
-      json.contains_file_references = (value)-> _.isString(value) and value.match(/\@\{[\s\S]{0,}?\}/g) isnt null
+      json.contains_property_references = (value)-> _.isString(value) and value.match(/#\{[^\{\}]*\}/g) isnt null
+      json.contains_file_references = (value)-> _.isString(value) and value.match(/@\{[^\{\}]*\}/g) isnt null
       # define function to resolve property references #{property}.
       # (this function uses the external output.code variable to resolve references in the entire document,
       # even when used on sub-properties).
       json.resolve_property_references = (value, back)->
          try
             new_value = value
-            matches = value.match /\#\{[\s\S]{0,}?\}/g
+            matches = value.match /#\{[^\{\}]*\}/g
             matches = [] if matches is null
             for match in matches
-               property = match.replace('#{', '').replace('}', '')
+               property = match.replace /[#\{\}]/g, ''
                eval('new_value = output.code.' + property)
                if _.isUndefined new_value then return back new Error match + ' reference doesn\'t exists.'
                if value.length isnt match.length then new_value = value.replace match, (if _.isObject new_value then JSON.stringify new_value else new_value)
@@ -450,10 +450,10 @@ exports['json'] = (input, back)->
       json.resolve_file_references = (value, back)->
          try
             new_value = value
-            matches = if _.isString value then value.match /\@\{[\s\S]{0,}?\}/g else null
+            matches = if _.isString value then value.match /@\{[^\{\}]*\}/g else null
             matches = [] if matches is null
             async.each matches, (match, back)->
-               file = match.replace('@{', '').replace('}', '')
+               file = match.replace /[@\{\}]/g, ''
                file = file.split '#'
                property = if file.length is 2 then file[1] else null
                file = file[0]
