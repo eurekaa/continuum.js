@@ -355,7 +355,8 @@ exports['jade'] = (input, back)->
       
       # remove and resolve all require tags.
       regexp = /require\(.+\)/ig 
-      requires = input.code.match regexp ? []
+      requires = input.code.match regexp
+      requires = [] if requires is null 
       input.code = input.code.replace regexp, ''
       async.each requires, (require, back)->
          try
@@ -489,6 +490,10 @@ exports['json'] = (input, back)->
                   , back
                
                (back)-> 
+                  done = false
+                  setTimeout -> 
+                     if done is false then return back new Error 'Circular reference timeout!'
+                  , 500
                   async.whilst ->
                      json.contains_file_references value
                   ,(back)->
@@ -498,7 +503,9 @@ exports['json'] = (input, back)->
                         value = new_value
                         object[key] = new_value
                         return back()
-                  ,back
+                  , (err)->
+                     done = true
+                     return back err
                
             ], back
             else return back()
