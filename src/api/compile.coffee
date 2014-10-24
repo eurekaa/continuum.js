@@ -229,7 +229,9 @@ exports['sass'] = (input, back)->
          options.sourceMap = '.' # bugfix: use fake path and replace later.
          options.outFile = '.'
       
-      options.error = (err)-> return back new Error(err.replace(options.file + ':', '').replace('\n', ''))
+      #@ todo: quando compilo con compass senza '@import compass' si blocca tutto senza passare da qui!.
+      options.error = (err)->
+         return back new Error(err.replace(options.file + ':', '').replace('\n', ''))
       
       options.success = (compiled, map)->
          try
