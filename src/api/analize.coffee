@@ -53,6 +53,7 @@ exports['javascript'] = (input, back)->
    catch err then return back err
 
 
+#@todo: non funziona bene il mapping sui sorgenti. 
 exports['stylesheet'] = (input, back)->
    if not _.isFunction back then return throw new Error('callback is required {function}.')
    if not _.isObject input then return back new Error('input is required {object}.')
