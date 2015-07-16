@@ -1,44 +1,4 @@
 {
-    "project": {
-        "environment": "debug", // [debug, test, live]
-        "input": "src",
-        "output": "debug?dev:bin",
-        "temp": "tmp",
-        "cache": "#{project.temp}/cache",
-        "source_map": "#{project.temp}/map",
-        "log": "#{project.temp}/log",
-        "scripts": "js",
-        "stylesheets": "css",
-        "images": "media/images",
-        "fonts": "media/fonts"
-    },
-
-    "tasks": {
-        "*.*": {
-            "compile": {
-                "coffeescript":{
-                    "blabla": true
-                },
-                "sass": {
-                    "includePaths": [], // paths to include to resolve @imports.
-                    "imagePath": "", // image path to prepend when you use image-url() function.
-                    "precision": null // decimals count.
-                },
-                "compass": {
-                    "cache_path": "#{@.project.cache}/compass"
-                }
-            }
-        },
-        "*.coffee": {
-            compile: true,
-            transform: true,
-            analize: true,
-            compress: true,
-            source_map: true
-        }
-        
-    },
-    
     "input": {
         "path": "."
     },
@@ -61,6 +21,12 @@
         "enabled": true,
         "path": ".",
         "extension": "map"
+    },
+    
+    "doc": {
+        "enabled": true,
+        "path": ".",
+        "extension": "jsdoc"
     },
     
     "log": {

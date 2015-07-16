@@ -1,0 +1,41 @@
+{
+    "cache": {
+        "enabled": true,
+        "path": "tmp/cache",
+        "extension": "cache"
+    },
+    
+    "source_map": {
+        "enabled": true,
+        "path": ".",
+        "extension": "map"
+    },
+    
+    "log": {
+        "enabled": true,
+        "path": ".",
+        "name": "continuum",
+        "extension": "log",
+        "levels": { // [ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF]
+            "console": "DEBUG",
+            "file": "ALL"
+        }
+    },
+    
+    "plugins": {
+        "axl-compile-coffescript": {
+            
+        }
+    },
+    
+    "suite": {
+        "default": {
+            "*.*": [
+                
+            ]
+        }
+        
+    }
+    
+   
+}

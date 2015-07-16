@@ -40,6 +40,10 @@ jade = require 'jade'
 ###
 
 
+exports['javascript'] = (input, back)->
+   return back null, 
+      code: input.code, warnings: []
+
 exports['coffeescript'] = (input, back)->
    if not _.isFunction back then return throw new Error('callback is required {function}.')
    if not _.isObject input then return back new Error('input is required {object}.')
@@ -230,6 +234,8 @@ exports['sass'] = (input, back)->
          options.outFile = '.'
       
       #@ todo: quando compilo con compass senza '@import compass' si blocca tutto senza passare da qui!.
+      #@ todo: quando uso @debug non viene stampato nulla a meno che non vada in errore il compilatore.
+      #@ todo: trovare il modo di intercettare lo standard-err!
       options.error = (err)->
          return back new Error(err.replace(options.file + ':', '').replace('\n', ''))
       
@@ -404,6 +410,31 @@ exports['jade'] = (input, back)->
    catch err then return back err
 
 
+###@
+   @name: 'json'
+   @description: 'compiles jsonx into json resolving links etc..'
+   @author: 
+      @name: 'stefano graziato'
+      @email: 'stefano.graziato@eurekaa.it'
+   @type: 'function'
+   @async: true
+   @arguments: [
+      input:
+         type: object
+         required: true
+         properties: 
+            file: type: 'string', required: true
+            source_map: type: 'object', required: false
+            code: type: 'string', required: false
+      back: type: 'function', required: true
+   ]
+   @returns:
+      type: 'object'
+      properties: 
+         code: type: 'string'
+         source_map: type: 'object'
+         warnings: type: 'array' 
+###
 exports['json'] = (input, back)->
    self = @
    if not _.isFunction back then return throw new Error('callback is required {function}.')
@@ -522,6 +553,7 @@ exports['json'] = (input, back)->
 
 
 # extension mappings.
+exports['js'] = @['javascript']
 exports['coffee'] = @['coffeescript']
 exports['litcoffee'] = @['coffeescript']
 exports['ls'] = @['livescript']
@@ -532,3 +564,4 @@ exports['styl'] = @['stylus']
 exports['stylus'] = @['stylus']
 exports['jade'] = @['jade']
 exports['json'] = @['json']
+exports['jsonx'] = @['json']

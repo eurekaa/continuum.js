@@ -16,3 +16,5 @@ exports['source_map'] = require './api/source_map.js'
 exports['transform'] = require './api/transform.js'
 
 exports['compress'] = require './api/compress.js'
+
+exports['doc'] = require './api/doc.js'

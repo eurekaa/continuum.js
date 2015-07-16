@@ -142,7 +142,7 @@ exports['image'] = (input, back)->
       # prepare compression options.
       batch = new imagemin()
       batch.src(new Buffer(input.code, 'base64'))
-      if input.extension is 'png' then batch.use imagemin.pngquant()
+      if input.extension is 'png' then batch.use imagemin.optipng()
       if input.extension is 'gif' then batch.use imagemin.gifsicle(interlaced: false)
       if input.extension is 'jpg' or input.extension is 'jpeg' then batch.use imagemin.jpegtran(progressive: true)
       if input.extension is 'svg' then batch.use imagemin.svgo()

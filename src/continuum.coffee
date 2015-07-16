@@ -208,6 +208,13 @@ exports['run'] = (options, back)->
          output.encoding = input.encoding
          output.code = ''
 
+         doc = {}
+         doc.extension = config.doc.extension
+         doc.file = input.file.replace(config.input.path, config.doc.path).replace '.' + input.extension, '.' + doc.extension
+         doc.directory = config.doc.path + '\\' + path.dirname path.relative(config.doc.path, doc.file)
+         doc.encoding = 'utf8'
+         doc.code = ''
+
          source_map = {}
          source_map.is_enabled = -> config.source_map.enabled is true
          source_map.extension = config.source_map.extension
@@ -370,6 +377,42 @@ exports['run'] = (options, back)->
                   return back()
             
             
+            # perform documentation.
+            (back)->
+               if failed is true then return back()
+               if config.doc.enabled isnt true then return back()
+               api.doc.run
+                  file: output.file
+                  extension: input.extension
+                  code: output.code
+                  options: config.doc.options or {}
+               , log, (err, result)->
+                  if err 
+                     log.error err.message
+                     log.trace err.stack
+                     log.error 'doc: FAILED!'
+                  else
+                     doc.code = result.code
+                     log.warn warning for warning in result.warnings
+                     
+                     # stringify output if an object.
+                     if _.isObject doc.code then doc.code = JSON.stringify doc.code, null, 4
+                     else return back()
+      
+                     # write output doc file.
+                     async.series [
+                        (back)-> fs_tools.mkdir doc.directory, back
+                        (back)-> fs.writeFile doc.file, doc.code, encoding: doc.encoding, back
+                     ], (err)->
+                        if err
+                           failed = true
+                           log.error err.message
+                           log.trace err.stack
+                           log.error 'writing doc file: FAILED!'
+                        else
+                           log.debug 'doc: done! [warnings: ' + result.warnings.length + ']'
+                        return back()
+            
             # perform compression.
             (back)->
                # skip if process is interrupted.
@@ -482,7 +525,11 @@ exports['run'] = (options, back)->
       
       , -> # (end of input walk, errors are self printed by each file).
          logger.info '*** processing project: done! ***'
-         logger.debug '[duration: ' + batch.duration + ', processed: ' + batch.processed + ', skipped: ' + batch.skipped + ', successes: ' + batch.successes + ', failures: ' + batch.failures + ']'
+         logger.debug """
+            [duration: #{batch.duration}, processed: #{batch.processed}, 
+            skipped: #{batch.skipped}, successes: #{batch.successes}, 
+            failures: #{batch.failures}]
+         """
 
          if back then back null,
             processed: batch.processed

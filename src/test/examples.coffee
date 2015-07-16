@@ -15,6 +15,7 @@ exports['options'] =
    input: path: 'examples/src'
    output: path: 'examples/bin'
    temp: path: 'examples/tmp'
+   doc: path: 'examples/doc'
    source_map: enabled: true, path: 'examples/map'
    cache: enabled: true, path: 'examples/tmp/cache'
    log: enabled: true, path: 'examples/log', name: 'test', levels: console: 'ALL', file: 'OFF'
@@ -61,6 +62,48 @@ exports['scripts/coffeescript/cps_none'] =
    extension: '.coffee'
    encoding: 'utf8'
    content: """
+            ###@doc
+               @name: 'json2'
+               @description: 'compiles jsonx into json resolving links etc..'
+               @type: 'function'
+               @async: true
+               @arguments: 
+                  input:
+                     type: 'object'
+                     required: true
+                     properties: 
+                        file: type: 'string', required: true
+                        source_map: type: 'object', required: false
+                        code: type: 'string', required: false
+                  back: type: 'function', required: true
+               @returns2:
+                  type: 'object'
+                  properties: 
+                     code: type: 'string'
+                     source_map: type: 'object'
+                     warnings: type: 'array' 
+            ###
+            ###@doc
+            @name: 'json'
+            @description: 'compiles jsonx into json resolving links etc..'
+            @type: 'function'
+            @async: true
+            @arguments: 
+               input:
+                  type: 'object'
+                  required: true
+                  properties: 
+                     file: type: 'string', required: true
+                     source_map: type: 'object', required: false
+                     code: type: 'string', required: false
+               back: type: 'function', required: true
+            @returns:
+               type: 'object'
+               properties: 
+                  code: type: 'string'
+                  source_map: type: 'object'
+                  warnings: type: 'array' 
+            ###
             test = (test, callback)-> callback null, (typeof test is 'string')
             exports['test'] = (callback)->
                test 'test', (err, result)->
@@ -95,7 +138,7 @@ exports['scripts/livescript/cps_none'] =
 exports['scripts/javascript/cps'] =
    extension: '.js'
    encoding: 'utf8'
-   content: """
+   content: """ 
             var test = function(test, !!){
                return (typeof test === 'string');
             };
@@ -109,6 +152,30 @@ exports['scripts/javascript/cps_none'] =
    extension: '.js'
    encoding: 'utf8'
    content: """
+            /*@doc
+            @name: 'json'
+            @description: 'compiles jsonx into json resolving links etc..'
+            @author: 
+               @name: 'stefano graziato'
+               @email: 'stefano.graziato@eurekaa.it'
+            @type: 'function'
+            @async: true
+            @arguments: 
+               input:
+                  type: 'object'
+                  required: true
+                  properties: 
+                     file: type: 'string', required: true
+                     source_map: type: 'object', required: false
+                     code: type: 'string', required: false
+               back: type: 'function', required: true
+            @returns:
+               type: 'object'
+               properties: 
+                  code: type: 'string'
+                  source_map: type: 'object'
+                  warnings: type: 'array' 
+            */
             var test = function(test, callback){
                callback(null, (typeof test === 'string'));
             };
